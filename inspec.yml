@@ -1,0 +1,89 @@
+name: aws-rds-crunchy-data-postgresql-16-stig-baseline
+title: aws-rds-crunchy-data-postgresql-16-stig-baseline
+maintainer: MITRE InSpec Team
+copyright: The MITRE Corporation, 2025
+copyright_email: saf@groups.mitre.org
+summary: "Inspec Validation Profile for AWS RDS hosted Crunchy Data PostgreSQL 16 Security Technical Implementation Guide"
+license: Apache-2.0
+description: An InSpec Compliance Profile. 
+version: 1.1.0
+inspec_version: ">= 4.0"
+
+depends:
+- name: crunchy-data-postgresql-16-stig-baseline
+  url: https://github.com/mitre/crunchy-data-postgresql-16-stig-baseline/archive/main.tar.gz
+  
+inputs:
+- name: pg_superusers
+  description: "Authorized superuser accounts"
+  type: array
+  value:
+    - "rdsadmin"
+  profile: crunchy-data-postgresql-stig-baseline
+  sensitive: true
+  
+- name: rds_superusers
+  description: "Members of the rds_superusers role"
+  type: array
+  value:
+    - "postgres"
+  profile: crunchy-data-postgresql-stig-baseline
+  sensitive: true
+
+- name: pg_users
+  description: "authorized postgres user accounts"
+  type: array
+  value:
+    - ""
+  sensitive: true
+
+# V-233520, V-233523
+- name: pg_system_resource_users
+  description: "Members that have logical access to information and system resources"
+  type: array
+  value:
+    - ""
+  sensitive: true
+
+- name: pg_owner
+  description: "The system user of the postgres process"
+  type: string
+  value: "postgres"
+  required: true
+  sensitive: false
+
+- name: pg_group
+  description: "The system group of the progress process"
+  type: string
+  value: "postgres"
+  required: true
+  sensitive: true
+
+- name: pg_dba
+  description: "The postgres DBA user to access the test database"
+  type: string
+  value: "postgres"
+  required: true
+  sensitive: true
+
+- name: pg_dba_password
+  description: "The password for the postgres DBA user"
+  type: string
+  value: ""
+  required: true
+  sensitive: true
+
+- name: pg_host
+  description: "The hostname or IP address used to connect to the database"
+  type: string
+  value: "localhost"
+  required: true
+  sensitive: true
+
+- name: pg_port
+  description: "The port used to connect to the database"
+  type: numeric
+  value: 5432
+  required: true
+  sensitive: true
+
