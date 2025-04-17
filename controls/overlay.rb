@@ -1340,7 +1340,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'SV-233616' do
+  control 'SV-261903' do
     describe 'A manual review is required to ensure the database contents are protected from unauthorized and unintended
       information transfer by enforcement of a data-transfer policy' do
       skip 'A manual review is required to ensure the database contents are protected from unauthorized and unintended
@@ -1369,22 +1369,9 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'SV-233620' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
   control 'SV-261962' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-233623' do
-    impact 0.0
-    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
-      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
     end
   end
 
