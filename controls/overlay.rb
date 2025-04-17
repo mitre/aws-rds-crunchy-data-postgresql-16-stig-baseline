@@ -41,28 +41,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'SV-233517' do
-    impact 0.0
-    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
-      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
-    end
-  end
-
-  control 'SV-233518' do
-    impact 0.0
-    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
-      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
-    end
-  end
-
-  control 'SV-261892' do
-    impact 0.0
-    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
-      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
-    end
-  end
-
-  control 'SV-233520' do
+  control 'SV-261859' do
     if input('windows_runner')
       describe 'Requires manual review.' do
         skip 'Requires manual review.'
@@ -70,7 +49,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     else
       sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
 
-      roles_sql = 'SELECT r.rolname FROM pg_catalog.pg_roles r AND r.rolname != \'rdsadmin\';'
+      roles_sql = 'SELECT r.rolname FROM pg_catalog.pg_roles r WHERE r.rolname != \'rdsadmin\';'
       roles_query = sql.query(roles_sql, [input('pg_db')])
       roles = roles_query.lines
 
@@ -344,12 +323,6 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
   end
 
   control 'SV-261877' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261909' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
