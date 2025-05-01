@@ -119,11 +119,10 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
       skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
     end
-<<<<<<< HEAD
-
+  end
   control 'SV-261909' do
     
-    describe 'This control is partially not applicable on postgres within aws rds and that portion has been removed, as aws manages the operating system on which the postgres database is running' do
+    describe 'This control is partially not applicable on postgres 16 within aws rds and that portion has been removed, as aws manages the operating system on which the postgres database is running' do
       sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
  
       describe sql.query('SHOW client_min_messages;',  [input('pg_db')]) do
@@ -137,7 +136,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
   control 'SV-261917' do
     impact 0.0
-    describe 'This control is partially not applicable on postgres within aws rds and that portion has been removed, as aws manages the operating system on which the postgres database is running' do
+    describe 'This control is partially not applicable on postgres 16 within aws rds and that portion has been removed, as aws manages the operating system on which the postgres database is running' do
       sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
       #this is the portion of the control that is not applicable to AWS RDS
       #describe sql.query('SHOW log_destination;', [input('pg_db')]) do
@@ -148,10 +147,6 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
         its('output') { should cmp 'LOCAL0' }    
       end
     end
-=======
-  end
-  
->>>>>>> a2d63cc2cdfec53048717dd55c16d09196b30b4d
   control 'SV-261885' do
     if !input('windows_runner')
       sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
