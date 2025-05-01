@@ -113,11 +113,13 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
       having organization-defined security label values with information in transmission'
     end
   end
+  
   control 'SV-261881' do
     impact 0.0
     describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
       skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
     end
+  end
   
   control 'SV-261885' do
     if !input('windows_runner')
