@@ -131,22 +131,22 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
       #This portion of the control is not applicable to AWS RDS systems
       #describe sql.query('SHOW log_file_mode;',  [input('pg_db')]) do  
       #  its('output') { should cmp '0600' }
-      end
     end
+  end
 
   control 'SV-261917' do
-    impact 0.0
-    describe 'This control is partially not applicable on postgres 16 within aws rds and that portion has been removed, as aws manages the operating system on which the postgres database is running' do
-      sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
-      #this is the portion of the control that is not applicable to AWS RDS
-      #describe sql.query('SHOW log_destination;', [input('pg_db')]) do
-      #  its('output') { should include 'syslog' }
-      #end
+      describe 'This control is partially not applicable on postgres 16 within aws rds and that portion has been removed, as aws manages the operating system on which the postgres database is running' do
+       sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
+       #this is the portion of the control that is not applicable to AWS RDS
+       #describe sql.query('SHOW log_destination;', [input('pg_db')]) do
+       #  its('output') { should include 'syslog' }
+      end
       
       describe sql.query('SHOW syslog_facility;', [input('pg_db')]) do
         its('output') { should cmp 'LOCAL0' }    
       end
-    end
+    
+  end
   control 'SV-261885' do
     if !input('windows_runner')
       sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
