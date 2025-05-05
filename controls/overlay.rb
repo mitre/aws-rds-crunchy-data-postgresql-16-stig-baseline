@@ -1,5 +1,5 @@
 include_controls 'crunchy-data-postgresql-16-stig-baseline' do
-  control 'V-233511' do
+  control 'SV-261889' do
     sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
 
     describe sql.query('SHOW port;', [input('pg_db')]) do
@@ -7,33 +7,33 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233512' do
+  control 'SV-261870' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233513' do
+  control 'SV-261936' do
     impact 0.0
     describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
       skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
     end
   end
 
-  control 'V-233514' do
+  control 'SV-261876' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233515' do
+  control 'SV-261858' do
     impact 0.0
     describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
       skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
     end
   end
 
-  control 'V-233516' do
+  control 'SV-261908' do
     sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
 
     describe sql.query('SHOW client_min_messages;', [input('pg_db')]) do
@@ -41,28 +41,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233517' do
-    impact 0.0
-    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
-      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
-    end
-  end
-
-  control 'V-233518' do
-    impact 0.0
-    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
-      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
-    end
-  end
-
-  control 'V-233519' do
-    impact 0.0
-    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
-      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
-    end
-  end
-
-  control 'V-233520' do
+  control 'SV-261859' do
     if input('windows_runner')
       describe 'Requires manual review.' do
         skip 'Requires manual review.'
@@ -70,7 +49,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     else
       sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
 
-      roles_sql = 'SELECT r.rolname FROM pg_catalog.pg_roles r AND r.rolname != \'rdsadmin\';'
+      roles_sql = 'SELECT r.rolname FROM pg_catalog.pg_roles r WHERE r.rolname != \'rdsadmin\';'
       roles_query = sql.query(roles_sql, [input('pg_db')])
       roles = roles_query.lines
 
@@ -127,15 +106,52 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233521' do
+  control 'SV-261913' do
     describe 'A manual review is required to ensure PostgreSQL associates organization-defined types of security labels
     having organization-defined security label values with information in transmission' do
       skip 'A manual review is required to ensure PostgreSQL associates organization-defined types of security labels
       having organization-defined security label values with information in transmission'
     end
   end
+  
+  control 'SV-261881' do
+    impact 0.0
+    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
+      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
+    end
+  end
+  control 'SV-261909' do
+    
+    
+      sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
+      describe sql.query('SHOW client_min_messages;',  [input('pg_db')]) do
+        its('output') { should match (/^error$/i) }
+        end
+      describe "Log File permissions are not applicable to AWS RDS" do
+        skip "Log File permissions are not applicable to AWS RDS"
+        #This portion of the control is not applicable to AWS RDS systems
+        #describe sql.query('SHOW log_file_mode;',  [input('pg_db')]) do  
+        #  its('output') { should cmp '0600' }
+      end
 
-  control 'V-233523' do
+  end
+
+  control 'SV-261917' do
+    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
+          describe 'This control is partially not applicable on postgres 16 within aws rds and that portion has been removed, as aws manages the operating system on which the postgres database is running' do
+            skip "This control is partially not applicable on postgres 16 within aws rds and that portion has been removed, as aws manages the operating system on which the postgres database is running"
+            # this is the portion of the control that is not applicable to AWS RDS
+            # describe sql.query('SHOW log_destination;', [input('pg_db')]) do
+            #  its('output') { should include 'syslog' }
+          end
+      
+      
+      describe sql.query('SHOW syslog_facility;', [input('pg_db')]) do
+        its('output') { should cmp 'LOCAL0' }    
+      end
+    
+  end
+  control 'SV-261885' do
     if !input('windows_runner')
       sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
       authorized_owners = input('pg_superusers')
@@ -200,8 +216,8 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
       end
     end
   end
-
-  control 'V-233525' do
+    
+  control 'SV-261911' do 
     describe 'A manual review is required to ensure PostgreSQL associates organization-defined types of security labels
     having organization-defined security label values with information in storage' do
       skip 'A manual review is required to ensure PostgreSQL associates organization-defined types of security labels
@@ -209,7 +225,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233526' do
+  control 'SV-261905' do
     describe 'A manual review is required to ensure PostgreSQL checks the validity of all data inputs except those
     specifically identified by the organization' do
       skip 'A manual review is required to ensure PostgreSQL checks the validity of all data inputs except those
@@ -217,7 +233,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233527' do
+  control 'SV-261906' do
     describe 'A manual review is require to ensure PostgreSQL and associated applications reserve the use of dynamic
     code execution for situations that require it.' do
       skip 'A manual review is require to ensure PostgreSQL and associated applications reserve the use of dynamic
@@ -225,7 +241,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233528' do
+  control 'SV-261907' do
     describe 'PostgreSQL and associated applications, when making use of dynamic code
     execution, must scan input data for invalid values that may indicate a code injection attack' do
       skip 'PostgreSQL and associated applications, when making use of dynamic code
@@ -233,7 +249,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233529' do
+  control 'SV-261918' do
     describe 'A manual review is required to ensure PostgreSQL allocates audit record storage capacity in accordance
     with organization-defined audit record storage requirements' do
       skip 'A manual review is required to ensure PostgreSQL allocates audit record storage capacity in accordance
@@ -241,7 +257,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233530' do
+  control 'SV-261914' do
     sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
 
     authorized_owners = input('rds_superusers')
@@ -343,19 +359,13 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233531' do
+  control 'SV-261877' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233533' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'V-233534' do
+  control 'SV-261862' do
     sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
 
     roles_sql = 'SELECT r.rolname FROM pg_catalog.pg_roles r;'
@@ -373,7 +383,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233535' do
+  control 'SV-261920' do
     describe 'A manual review is required to ensure PostgreSQL provides an immediate real-time alert to appropriate
       support staff of all audit failure events requiring real-time alerts' do
       skip 'A manual review is required to ensure PostgreSQL provides an immediate real-time alert to appropriate
@@ -381,7 +391,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233539' do
+  control 'SV-261884' do
     sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
     authorized_owners = input('rds_superusers')
     pg_owner = input('pg_owner')
@@ -484,21 +494,21 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233540' do
+  control 'SV-261882' do
     impact 0.0
     describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
       skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
     end
   end
 
-  control 'V-233541' do
+  control 'SV-261883' do
     impact 0.0
     describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
       skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
     end
   end
 
-  control 'V-233542' do
+  control 'SV-261872' do
     describe 'A manual review is required to ensure PostgreSQL includes additional, more detailed, organization-defined
       information in the audit records for audit events identified by type,
       location, or subject' do
@@ -508,7 +518,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233543' do
+  control 'SV-261916' do
     desc 'check', 'Functions in PostgreSQL can be created with the SECURITY DEFINER
     option. When SECURITY DEFINER functions are executed by a user, said function
     is run with the privileges of the user who created it.
@@ -557,13 +567,13 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233544' do
+  control 'SV-261934' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233546' do
+  control 'SV-261902' do
     pg_owner = input('pg_owner')
     pg_dba = input('pg_dba')
     pg_dba_password = input('pg_dba_password')
@@ -604,128 +614,128 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233547' do
+  control 'SV-261925' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233549' do
+  control 'SV-261875' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233550' do
+  control 'SV-261935' do
     impact 0.0
     describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
       skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
     end
   end
 
-  control 'V-233551' do
+  control 'SV-261940' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233552' do
+  control 'SV-261939' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233553' do
+  control 'SV-261957' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233554' do
+  control 'SV-261960' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233555' do
+  control 'SV-261947' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233556' do
+  control 'SV-261942' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233557' do
+  control 'SV-261955' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233558' do
+  control 'SV-261956' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233559' do
+  control 'SV-261952' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233560' do
+  control 'SV-261864' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233561' do
+  control 'SV-261951' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233562' do
+  control 'SV-261863' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233563' do
+  control 'SV-261949' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233564' do
+  control 'SV-261963' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233566' do
+  control 'SV-261941' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233567' do
+  control 'SV-261938' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233568' do
+  control 'SV-261950' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233569' do
+  control 'SV-261961' do
     desc 'check', 'First, as the database administrator, verify that log_connections
     and log_disconnections are enabled by running the following SQL:
     $ sudo su - postgres
@@ -738,7 +748,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     $ psql -c "SHOW log_line_prefix"
     If log_line_prefix does not contain at least %t %u %d %p, this is a finding.'
 
-    desc 'fix', %q(Note: The following instructions use the PGDATA and PGVER
+    desc 'fix', %q[Note: The following instructions use the PGDATA and PGVER
     environment variables. See supplementary content APPENDIX-F for instructions on
     configuring PGDATA and APPENDIX-H for PGVER.
     To ensure that logging is enabled, review supplementary content APPENDIX-C for
@@ -760,7 +770,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     # SYSTEMD SERVER ONLY
     $ sudo systemctl reload postgresql-${PGVER?}
     # INITD SERVER ONLY
-    $ sudo service postgresql-${PGVER?} reload")
+    $ sudo service postgresql-${PGVER?} reload"]
 
     sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
 
@@ -781,56 +791,56 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233570' do
+  control 'SV-261953' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233571' do
+  control 'SV-261944' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233572' do
+  control 'SV-261959' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233573' do
+  control 'SV-261946' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233574' do
+  control 'SV-261948' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233575' do
+  control 'SV-261945' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233576' do
+  control 'SV-261943' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233577' do
+  control 'SV-261893' do
     impact 0.0
     describe 'This control is not applicable on postgres within aws rds, as aws manages this capability' do
       skip 'This control is not applicable on postgres within aws rds, as aws manages this capability'
     end
   end
 
-  control 'V-233581' do
+  control 'SV-261922' do
     desc 'check', 'Note: The following instructions use the PGDATA environment
     variable. See supplementary content APPENDIX-F for instructions on configuring
     PGDATA.
@@ -851,7 +861,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     host=[local]
     If time stamps are not being logged, this is a finding.'
 
-    desc 'fix', %q(Note: The following instructions use the PGDATA and PGVER
+    desc 'fix', %q[Note: The following instructions use the PGDATA and PGVER
     environment variables. See supplementary content APPENDIX-F for instructions on
     configuring PGDATA and APPENDIX-H for PGVER.
     PostgreSQL will not log anything if logging is not enabled. To ensure that
@@ -869,7 +879,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     # SYSTEMD SERVER ONLY
     $ sudo systemctl reload postgresql-${PGVER?}
     # INITD SERVER ONLY
-    $ sudo service postgresql-${PGVER?} reload")
+    $ sudo service postgresql-${PGVER?} reload"]
 
     sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
 
@@ -878,7 +888,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233582' do
+  control 'SV-261871' do
     desc 'check', 'Check PostgreSQL settings and existing audit records to verify a
     user name associated with the event is being captured and stored with the audit
     records. If audit records exist without specific user information, this is a
@@ -918,21 +928,21 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233583' do
+  control 'SV-261965' do
     impact 0.0
     describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
       skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
     end
   end
 
-  control 'V-233585' do
+  control 'SV-261966' do
     impact 0.0
     describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
       skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
     end
   end
 
-  control 'V-233588' do
+  control 'SV-261898' do
     sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
 
     pg_superusers = input('pg_superusers')
@@ -958,7 +968,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233591' do
+  control 'SV-261869' do
     desc 'fix', "Note: The following instructions use the PGDATA and PGVER
     environment variables. See supplementary content APPENDIX-F for instructions on
     configuring PGDATA and APPENDIX-H for PGVER.
@@ -1003,21 +1013,21 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233593' do
+  control 'SV-261888' do
     impact 0.0
     describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
       skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
     end
   end
 
-  control 'V-233594' do
+  control 'SV-261887' do
     impact 0.0
     describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
       skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
     end
   end
 
-  control 'V-233595' do
+  control 'SV-261912' do
     describe 'A manual review is required to ensure PostgreSQL associates organization-defined types of security labels
       having organization-defined security label values with information in process' do
       skip 'A manual review is required to ensure PostgreSQL associates organization-defined types of security labels
@@ -1025,7 +1035,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233596' do
+  control 'SV-261891' do
     sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
 
     describe sql.query('SHOW password_encryption;', [input('pg_db')]) do
@@ -1033,7 +1043,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233597' do
+  control 'SV-261924' do
     desc 'check', 'To list all the permissions of individual roles, as the database
     administrator (shown here as "postgres"), run the following SQL:
     $ psql -c "\du
@@ -1120,7 +1130,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233598' do
+  control 'SV-261860' do
     desc 'check', %q(First, as the database administrator, review the current
     log_line_prefix settings by running the following SQL:
     $ sudo su - postgres
@@ -1175,7 +1185,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233599' do
+  control 'SV-261919' do
     describe "A manual review is required to ensure the system provides a warning to appropriate support staff when
       allocated audit record storage volume reaches 75% of maximum audit record storage capacity" do
       skip "A manual review is required to ensure the system provides a warning to appropriate support staff when
@@ -1183,7 +1193,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233601' do
+  control 'SV-261927' do
     describe "A manual review is required to ensure PostgreSQL requires users to reauthenticate when organization-defined
       circumstances or situations require reauthentication" do
       skip "A manual review is required to ensure PostgreSQL requires users to reauthenticate when organization-defined
@@ -1191,14 +1201,14 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233602' do
+  control 'SV-261894' do
     impact 0.0
     describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
       skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
     end
   end
 
-  control 'V-233604' do
+  control 'SV-261866' do
     desc 'check', 'As the database administrator (shown here as "postgres"),
     verify the current log_line_prefix setting:
     $ psql -c "SHOW log_line_prefix"
@@ -1272,13 +1282,13 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233607' do
+  control 'SV-261878' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233608' do
+  control 'SV-261867' do
     desc 'check', "As the database administrator (usually postgres), run the
     following SQL:
     $ psql -c \"SHOW log_line_prefix\"
@@ -1308,20 +1318,20 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233609' do
+  control 'SV-261880' do
     impact 0.0
     describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
       skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
     end
   end
 
-  control 'V-233610' do
+  control 'SV-261967' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233612' do
+  control 'SV-261890' do
     desc 'check', 'Review PostgreSQL settings to determine whether organizational users
     are uniquely identified and authenticated when logging on/connecting to the system.
     To list all roles in the database, as the database administrator (shown here as
@@ -1351,7 +1361,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233613' do
+  control 'SV-261910' do
     describe 'A manual review is required to ensure PostgreSQ automatically terminates a user session after
       organization-defined conditions or trigger events requiring session disconnect' do
       skip 'A manual review is required to ensure PostgreSQ automatically terminates a user session after
@@ -1359,7 +1369,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233615' do
+  control 'SV-261895' do
     describe 'A manual review is required to ensure PostgreSQL maps the PKI-authenticated identity to an associated user
       account' do
       skip 'A manual review is required to ensure PostgreSQL maps the PKI-authenticated identity to an associated user
@@ -1367,7 +1377,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233616' do
+  control 'SV-261903' do
     describe 'A manual review is required to ensure the database contents are protected from unauthorized and unintended
       information transfer by enforcement of a data-transfer policy' do
       skip 'A manual review is required to ensure the database contents are protected from unauthorized and unintended
@@ -1375,47 +1385,35 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'V-233617' do
+  control 'SV-261904' do
     impact 0.0
     describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
       skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
     end
   end
 
-  control 'V-233618' do
+  control 'SV-261879' do
     impact 0.0
     describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
       skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
     end
   end
 
-  control 'V-233619' do
+  control 'SV-261896' do
     impact 0.0
     describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
       skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
     end
   end
 
-  control 'V-233620' do
+  control 'SV-261962' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'V-233621' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'V-233623' do
-    impact 0.0
-    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
-      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
-    end
-  end
-
-  control 'V-233578' do
+  control 'SV-261868' do
+   
     desc 'check', 'First, as the database administrator (shown here as "postgres"), check the
     current log_line_prefix setting by running the following SQL:
     $ psql -c "SHOW log_line_prefix"
