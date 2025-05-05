@@ -139,7 +139,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
   control 'SV-261917' do
     sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
           describe 'This control is partially not applicable on postgres 16 within aws rds and that portion has been removed, as aws manages the operating system on which the postgres database is running' do
-            skip "This portion of the control is NA"
+            skip "This control is partially not applicable on postgres 16 within aws rds and that portion has been removed, as aws manages the operating system on which the postgres database is running"
             # this is the portion of the control that is not applicable to AWS RDS
             # describe sql.query('SHOW log_destination;', [input('pg_db')]) do
             #  its('output') { should include 'syslog' }
