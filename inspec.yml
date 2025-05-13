@@ -87,3 +87,7 @@ inputs:
   required: true
   sensitive: true
 
+- name: priv_esc
+  desc: "Privilege elevation must be used only where necessary and protected from misuse"
+  type: string
+  value: "|t"
