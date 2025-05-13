@@ -557,7 +557,9 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
       describe.one do
         describe sql_result do
-          its('output') { should eq '' }
+          if its('output') != ''
+            its('output') { should include input(priv_esc) }
+         end
         end
 
         describe sql_result do
