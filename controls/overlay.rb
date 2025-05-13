@@ -554,11 +554,12 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
       connection_error_regex = Regexp.new(connection_error)
 
       sql_result = sql.query(security_definer_sql, [database])
-
+      
+      privs = input('priv_esc')
       describe.one do
         describe sql_result do
           if its('output') != ''
-            its('output') { should include input(priv_esc) }
+            its('output') { should include privs }
          end
         end
 
