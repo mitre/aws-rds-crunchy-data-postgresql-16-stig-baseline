@@ -565,7 +565,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
         # If privilege escalation is allowed, 
         # then control will pass if privilege escalation is possible
-        if privilege_escalation_allowed
+        if function_security_definer_privilege_escalation_allowed
           describe sql_result do
               its('output') { should include '|t' }
           end
