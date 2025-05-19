@@ -555,15 +555,20 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
       sql_result = sql.query(security_definer_sql, [database])
       
-      privs = input('priv_esc')
+      function_security_definer_privilege_escalation_allowed = input('function_security_definer_privilege_escalation_allowed')
+
       describe.one do
 
         describe sql_result do
-            its('output') { should eq  }
+            its('output') { should eq '' }
         end
 
-        describe sql_result do
-            its('output') { should include privs }
+        # If privilege escalation is allowed, 
+        # then control will pass if privilege escalation is possible
+        if privilege_escalation_allowed
+          describe sql_result do
+              its('output') { should include '|t' }
+          end
         end
 
         describe sql_result do
