@@ -557,10 +557,13 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
       
       privs = input('priv_esc')
       describe.one do
+
         describe sql_result do
-          if its('output') != ''
+            its('output') { should eq  }
+        end
+
+        describe sql_result do
             its('output') { should include privs }
-         end
         end
 
         describe sql_result do
