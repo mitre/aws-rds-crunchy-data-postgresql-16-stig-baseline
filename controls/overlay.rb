@@ -844,19 +844,19 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
       its('output') { should match (/^error$/i) }
     end
 
-  control 'SV-261910' do
-    describe 'A manual review is required to ensure PostgreSQ automatically terminates a user session after
-      organization-defined conditions or trigger events requiring session disconnect' do
-      skip 'A manual review is required to ensure PostgreSQ automatically terminates a user session after
-      organization-defined conditions or trigger events requiring session disconnect'
-    end
-  end
-
     describe "Log File permissions are not applicable to AWS RDS" do
       skip "Log File permissions are not applicable to AWS RDS"
       #This portion of the control is not applicable to AWS RDS systems
       #describe sql.query('SHOW log_file_mode;',  [input('pg_db')]) do  
       #  its('output') { should cmp '0600' }
+    end
+  end
+
+  control 'SV-261910' do
+    describe 'A manual review is required to ensure PostgreSQ automatically terminates a user session after
+      organization-defined conditions or trigger events requiring session disconnect' do
+      skip 'A manual review is required to ensure PostgreSQ automatically terminates a user session after
+      organization-defined conditions or trigger events requiring session disconnect'
     end
   end
 
