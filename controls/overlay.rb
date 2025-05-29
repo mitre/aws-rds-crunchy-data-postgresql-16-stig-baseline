@@ -1034,11 +1034,17 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
         # If privilege escalation is allowed, 
         # then control will pass if privilege escalation is possible
-        if function_security_definer_privilege_escalation_allowed
+       input('function_security_definer_privilege_escalation_allowed').each do |element|
+        if sql_result.lines include element
           describe sql_result do
-              its('output') { should include '|t' }
+            its('output') { should include (/\|t$/) }
           end
         end
+        #if function_security_definer_privilege_escalation_allowed
+        #  describe sql_result do
+        #      its('output') { should include '|t' }
+        #  end
+        #end
 
         describe sql_result do
           it { should match connection_error_regex }
