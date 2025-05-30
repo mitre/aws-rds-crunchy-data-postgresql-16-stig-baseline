@@ -1028,7 +1028,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
       privilege_escalation_functions = input('privilege_escalation_functions', value: [])
 
       describe.one do
-        # Case 1: No functions provided → allow either empty output or connection error
+        # Case 1: No functions (input) provided → allow either empty output or connection error
         if privilege_escalation_functions.empty?
           describe sql_result do
             its('output') { should eq '' }
@@ -1038,30 +1038,22 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
             it { should match connection_error_regex }
           end
         else
-          # Check if listed functions have privilege escalation set on the database
-          # function_list = sql_result.lines
-          # privilege_escalation_functions.each do |element|
-          #   if function_list.include?(element)
-          #     describe sql_result do
-          #       its('output') { should include (/\|t$/) }
-          #     end
-          #   end
-          # end
-
-          # Case 2: Functions provided → validate their presence and privilege flag
-          function_list = sql_result.lines.map(&:strip)
+          # Case 2: Input functions provided → validate their presence and privilege flag
+          function_lines = sql_result.lines.map(&:strip)
           
           privilege_escalation_functions.each do |function_name|
-            if function_list.any? { |line| line.include?(function_name) }
-              describe "Function '#{function_name}' in SQL output" do
-                it "should be marked with '|t' (trusted)" do
-                  expect(sql_result.output).to include(/\|t$/)
+            matching_line = function_lines.find { |line| line.include?(function_name) }
+      
+            if matching_line
+              describe "Function '#{function_name}' output line" do
+                it "should end with '|t'" do
+                  expect(matching_line).to match(/\|t$/)
                 end
               end
             else
-              describe "Function '#{function_name}' in SQL output" do
-                it 'should not be present in the output (ok)' do
-                  expect(function_list.any? { |line| line.include?(function_name) }).to be false
+              describe "Function '#{function_name}' presence check" do
+                it 'should not be present in the SQL output (OK)' do
+                  expect(matching_line).to be_nil
                 end
               end
             end
