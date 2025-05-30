@@ -1023,24 +1023,32 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
       connection_error_regex = Regexp.new(connection_error)
 
       sql_result = sql.query(security_definer_sql, [database])
-      
-      function_security_definer_privilege_escalation_allowed = input('function_security_definer_privilege_escalation_allowed')
+
+      # value: [] as a fallback ensures the control won’t crash if privilege_escalation_functions isn’t defined at all.
+      privilege_escalation_functions = input('privilege_escalation_functions', value: [])
 
       describe.one do
+
+        # If we don't have any privilege escalation functions, test for an empty output
+        if privilege_escalation_functions.empty?
+          describe sql_result do
+            its('output') { should eq '' }
+          end
+        else
+          # Check is listed function have privilege escalatio set
+          privilege_escalation_functions.each do |element|
+            if sql_result.lines include element
+              describe sql_result do
+                its('output') { should include (/\|t$/) }
+              end
+            end
+          end
+        end
 
         describe sql_result do
             its('output') { should eq '' }
         end
 
-        # If privilege escalation is allowed, 
-        # then control will pass if privilege escalation is possible
-        function_security_definer_privilege_escalation_allowed.each do |element|
-          if sql_result.lines include element
-            describe sql_result do
-              its('output') { should include (/\|t$/) }
-            end
-          end
-        end
         #if function_security_definer_privilege_escalation_allowed
         #  describe sql_result do
         #      its('output') { should include '|t' }
