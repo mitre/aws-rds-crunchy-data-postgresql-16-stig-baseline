@@ -1029,13 +1029,17 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
       describe.one do
 
-        # If we don't have any privilege escalation functions, test for an empty output
+        # If we don't have any privilege escalation functions, test for an empty output or connection error
         if privilege_escalation_functions.empty?
           describe sql_result do
             its('output') { should eq '' }
           end
+
+          describe sql_result do
+            it { should match connection_error_regex }
+          end
         else
-          # Check is listed function have privilege escalatio set
+          # Check if listed functions have privilege escalation set on the database
           privilege_escalation_functions.each do |element|
             if sql_result.lines include element
               describe sql_result do
@@ -1043,20 +1047,6 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
               end
             end
           end
-        end
-
-        describe sql_result do
-            its('output') { should eq '' }
-        end
-
-        #if function_security_definer_privilege_escalation_allowed
-        #  describe sql_result do
-        #      its('output') { should include '|t' }
-        #  end
-        #end
-
-        describe sql_result do
-          it { should match connection_error_regex }
         end
       end
     end
