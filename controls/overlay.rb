@@ -1030,12 +1030,21 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
       describe.one do
         # Case 1: No functions (input) provided → allow either empty output or connection error
         if privilege_escalation_functions.empty?
-          describe sql_result do
-            its('output') { should eq '' }
-          end
+          # describe sql_result do
+          #   its('output') { should eq '' }
+          # end
 
-          describe sql_result do
-            it { should match connection_error_regex }
+          # describe sql_result do
+          #   it { should match connection_error_regex }
+          # end
+          sql_lines = sql_result.output.lines.map(&:strip)
+
+          sql_lines.each_with_index do |line, i|
+            describe "SQL output line #{i + 1}" do
+              it "should be empty or match the connection error regex" do
+                expect(line.empty? || line.match?(connection_error_regex)).to be true
+              end
+            end
           end
         else
           # Case 2: Input functions provided → validate their presence and privilege flag
