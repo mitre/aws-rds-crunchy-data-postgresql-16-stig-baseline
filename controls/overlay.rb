@@ -1042,7 +1042,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
           # Check if listed functions have privilege escalation set on the database
           function_list = sql_result.lines
           privilege_escalation_functions.each do |element|
-            if funcrion_list.include?(element)
+            if function_list.include?(element)
               describe sql_result do
                 its('output') { should include (/\|t$/) }
               end
