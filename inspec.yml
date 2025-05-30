@@ -88,10 +88,9 @@ inputs:
   sensitive: true
 
 # SV-261916
-- name: function_security_definer_privilege_escalation_allowed
-  description: "Privilege elevation must be used only where necessary and protected from misuse"
+- name: privilege_escalation_functions
+  description: "List of function that have privilege elevation must be used only where necessary and protected from misuse"
   type: array
-  value: 
-    -  "postgres_pg_stat_activity_autovacuum"
+  value: []
   required: false
   sensitive: false
