@@ -1023,92 +1023,32 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
     databases.each do |database|
       connection_error = "FATAL:\\s+database \"#{database}\" is not currently "\
-        'accepting connections'
+        'accepting connections' 
       connection_error_regex = Regexp.new(connection_error)
-
+      
       sql_result = sql.query(security_definer_sql, [database])
-
-      # value: [] as a fallback ensures the control won’t crash if privilege_escalation_functions isn’t defined at all.
-      #privilege_escalation_functions = input('privilege_escalation_functions', value: [])
-
+      
       describe.one do
-        # Case 1: No functions (input) provided → allow either empty output or connection error
+        # Case 1: No allowed functions specified → ensure no privilege escalation functions are returned 
         if allowed_functions.empty?
-          sql_lines = sql_result.output.lines.map(&:strip)
-
-          sql_lines.each_with_index do |line, i|
-            describe "SQL output line #{i + 1}" do
-              it "should be empty or match the connection error regex" do
-                expect(line.empty? || line.match?(connection_error_regex)).to be true
-              end
+          describe "SQL query result for database '#{database}'" do
+            it 'should not return any privilege escalation functions (OK)' do
+              expect(sql_result.lines.map(&:strip)).to be_empty.or match(connection_error_regex)
             end
           end
         else
-          # Case 2: Input functions provided → validate their presence and privilege flag
-          function_lines = sql_result.lines.map(&:strip)
-          
-          allowed_functions.each do |function_name|
-            matching_line = function_lines.find { |line| line.include?(function_name) }
-      
-            if matching_line
-              describe "Function '#{function_name}' output line" do
-                it "should end with '|t' (Trusted)" do
-                  expect(matching_line).to match(/\|t$/)
-                end
-              end
-            else
-              describe "Function '#{function_name}' presence check" do
-                it 'should not be present in the SQL output (OK)' do
-                  expect(matching_line).to be_nil
-                end
+          # Case 2: Validate returned functions against the allowed list 
+          returned_functions = sql_result.lines.map { |line| line.split('|')[1].strip } # Extract function names
+          returned_functions.each do |function_name|
+            describe "Function '#{function_name}'" do
+              it 'should be in the list of allowed privilege escalation functions (Trusted)' do
+                expect(function_name).to be_in(allowed_functions)
               end
             end
           end
         end
       end
     end
-    # databases.each do |database|
-    #   connection_error = "FATAL:\\s+database \"#{database}\" is not currently "\
-    #     'accepting connections' 
-    #   connection_error_regex = Regexp.new(connection_error)
-      
-    #   sql_result = sql.query(security_definer_sql, [database])
-      
-    #   describe.one do
-    #     # Case 1: No allowed functions specified → ensure no privilege escalation functions are returned 
-    #     if allowed_functions.empty?
-    #       describe "SQL query result for database '#{database}'" do
-    #         it 'should not return any privilege escalation functions' do
-    #           expect(sql_result.lines.map(&:strip)).to be_empty.or match(connection_error_regex)
-    #         end
-    #       end
-    #     else
-    #       # Case 2: Validate returned functions against the allowed list 
-    #       returned_functions = sql_result.lines.map { |line| line.split('|')[1].strip } # Extract function names
-    #       returned_functions.each do |function_name|
-    #         describe "Function '#{function_name}'" do
-    #           it 'should be in the list of allowed privilege escalation functions' do
-    #             expect(function_name).to be_in(allowed_functions)
-    #           end
-    #         end
-    #       end
-    #     end
-    #   end
-    # end
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    
   end
 
   control 'SV-261917' do
