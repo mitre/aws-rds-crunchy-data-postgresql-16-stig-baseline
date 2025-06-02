@@ -1017,6 +1017,9 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     databases_query = sql.query(databases_sql, [pg_db])
     databases = databases_query.lines
 
+    # User-specified list of allowed privilege escalation functions
+    # Setting value: [] ensures the control won’t crash if privilege_escalation_functions isn’t defined at all.
+    allowed_functions = input('privilege_escalation_functions', value: [])
     databases.each do |database|
       connection_error = "FATAL:\\s+database \"#{database}\" is not currently "\
         'accepting connections'
@@ -1025,11 +1028,11 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
       sql_result = sql.query(security_definer_sql, [database])
 
       # value: [] as a fallback ensures the control won’t crash if privilege_escalation_functions isn’t defined at all.
-      privilege_escalation_functions = input('privilege_escalation_functions', value: [])
+      #privilege_escalation_functions = input('privilege_escalation_functions', value: [])
 
       describe.one do
         # Case 1: No functions (input) provided → allow either empty output or connection error
-        if privilege_escalation_functions.empty?
+        if allowed_functions.empty?
           sql_lines = sql_result.output.lines.map(&:strip)
 
           sql_lines.each_with_index do |line, i|
@@ -1043,7 +1046,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
           # Case 2: Input functions provided → validate their presence and privilege flag
           function_lines = sql_result.lines.map(&:strip)
           
-          privilege_escalation_functions.each do |function_name|
+          allowed_functions.each do |function_name|
             matching_line = function_lines.find { |line| line.include?(function_name) }
       
             if matching_line
