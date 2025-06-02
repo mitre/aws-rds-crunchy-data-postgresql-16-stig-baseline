@@ -509,30 +509,43 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
         'accepting connections'
       connection_error_regex = Regexp.new(connection_error)
 
+      # Test the schema query resultes
       sql_result = sql.query(schemas_sql, [database])
 
-      describe.one do
-        describe sql_result do
-          its('output') { should eq '' }
-        end
+      # describe.one do
+      #   describe sql_result do
+      #     its('output') { should eq '' }
+      #   end
 
-        describe sql_result do
-          it { should match connection_error_regex }
+      #   describe sql_result do
+      #     it { should match connection_error_regex }
+      #   end
+      # end
+      #owned by an authorized role for ownership
+      describe "SQL query result for database '#{database}'" do
+        it 'should not return any schemas owned by unauthorized users (OK)' do
+          expect(sql_result.lines.map(&:strip)).to be_empty.or match(connection_error_regex)
         end
       end
-
+      
+      # Test the functions query results
       sql_result = sql.query(functions_sql, [database])
 
-      describe.one do
-        describe sql_result do
-          its('output') { should eq '' }
-        end
+      # describe.one do
+      #   describe sql_result do
+      #     its('output') { should eq '' }
+      #   end
 
-        describe sql_result do
-          it { should match connection_error_regex }
+      #   describe sql_result do
+      #     it { should match connection_error_regex }
+      #   end
+      # end
+      describe "SQL query result for database '#{database}'" do
+        it 'should not return any functions owned by unauthorized users (OK)' do
+          expect(sql_result.lines.map(&:strip)).to be_empty.or match(connection_error_regex)
         end
       end
-
+    
       types.each do |type|
         objects_sql = ''
 
@@ -556,13 +569,18 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
         sql_result = sql.query(objects_sql, [database])
 
-        describe.one do
-          describe sql_result do
-            its('output') { should eq '' }
-          end
+        # describe.one do
+        #   describe sql_result do
+        #     its('output') { should eq '' }
+        #   end
 
-          describe sql_result do
-            it { should match connection_error_regex }
+        #   describe sql_result do
+        #     it { should match connection_error_regex }
+        #   end
+        # end
+        describe "SQL query result for database '#{database}' and relation '#{type}'" do
+          it 'should not be owned by unauthorized users (OK)' do
+            expect(sql_result.lines.map(&:strip)).to be_empty.or match(connection_error_regex)
           end
         end
       end
@@ -616,13 +634,22 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
           sql_result = sql.query(relacl_sql, [database])
 
-          describe.one do
-            describe sql_result do
-              its('output') { should match object_acl_regex }
-            end
+          # describe.one do
+          #   describe sql_result do
+          #     its('output') { should match object_acl_regex }
+          #   end
 
-            describe sql_result do
-              its('output') { should match pg_settings_acl_regex }
+          #   describe sql_result do
+          #     its('output') { should match pg_settings_acl_regex }
+          #   end
+          # end
+          
+          # nspname: This stores the name of the schema.
+          # relname: The name of the table, index, view, etc. 
+          # relkind: Indicates the type of relation (e.g., 'r' for ordinary table, 'i' for index, 'v' for view, 'S' for sequence) 
+          describe "SQL query result for database '#{database}', schema '#{schema}', object '#{object}' and relation type '#{type}'" do
+            it 'should not be owned by unauthorized users (OK)' do
+              expect(sql_result.output).to match(object_acl_regex).or match(pg_settings_acl_regex)
             end
           end
           tested.push(obj)
