@@ -1,3 +1,5 @@
+# libraries/helper_methods.rb
+
 module CustomHelpers
   def report_result(description)
     yield

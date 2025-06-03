@@ -525,7 +525,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
       describe "SQL query result for database '#{database}'" do
         sql_result = sql.query(schemas_sql, [database])
         
-        it 'should not return any schemas owned by unauthorized users (OK)' do
+        it 'should not return any schemas owned by unauthorized users' do
           report_result("Ownership check") do
             expect(sql_result.lines.map(&:strip)).to be_empty.or match(connection_error_regex)
           end
@@ -547,7 +547,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
       describe "SQL query result for database '#{database}'" do
         sql_result = sql.query(functions_sql, [database])
         
-        it 'should not return any functions owned by unauthorized users (OK)' do
+        it 'should not return any functions owned by unauthorized users' do
           report_result("Ownership check") do
             expect(sql_result.lines.map(&:strip)).to be_empty.or match(connection_error_regex)
           end
