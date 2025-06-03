@@ -346,9 +346,19 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
       end
     end
 
-    describe sql.query('SHOW log_hostname;', [input('pg_db')]) do
-      its('output') { should match /(on|true)/i }
+    # describe sql.query('SHOW log_hostname;', [input('pg_db')]) do
+    #   its('output') { should match /(on|true)/i }
+    # end
+    describe 'PostgreSQL logging settings' do
+      it 'should have log hostname enabled' do 
+        report_result('log_hostname setting') do
+          expect(
+            sql.query('SHOW log_hostname;', [input('pg_db')]).output.strip.downcase
+          ).to match(/^(on|true)$/)
+        end
+      end
     end
+
   end
 
   control 'SV-261870' do

@@ -12,6 +12,10 @@ end
 
 # Include the module so the methods are available globally
 # This is required in InSpec profiles
-class ::Inspec::ProfileContext
+# class ::Inspec::ProfileContext
+#   include CustomHelpers
+# end
+# This is the key line for overlays:
+class ::Inspec::Resources::ControlEvalContext
   include CustomHelpers
 end
