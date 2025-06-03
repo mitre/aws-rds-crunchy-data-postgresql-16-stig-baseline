@@ -643,10 +643,6 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
           #     its('output') { should match pg_settings_acl_regex }
           #   end
           # end
-          
-          # nspname: This stores the name of the schema.
-          # relname: The name of the table, index, view, etc. 
-          # relkind: Indicates the type of relation (e.g., 'r' for ordinary table, 'i' for index, 'v' for view, 'S' for sequence) 
           describe "SQL query result for database '#{database}', schema '#{schema}', object '#{object}' and relation type '#{type}'" do
             it 'should not be owned by unauthorized users (OK)' do
               expect(sql_result.output).to match(object_acl_regex).or match(pg_settings_acl_regex)
