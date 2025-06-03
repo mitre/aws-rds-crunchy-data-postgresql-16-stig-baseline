@@ -656,11 +656,10 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
           #   end
           # end
           describe "SQL query result for database '#{database}', schema '#{schema}', object '#{object}' and relation type '#{type}'" do
-            it 'should not be owned by unauthorized users (OK)' do
+            it 'should not be owned by unauthorized users' do
               report_result("Ownership check") do
                 expect(sql_result.output).to match(object_acl_regex).or match(pg_settings_acl_regex)
               end
-              # expect(sql_result.output).to match(object_acl_regex).or match(pg_settings_acl_regex)
             end
           end
           tested.push(obj)
@@ -1028,17 +1027,27 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
                           " AND n.nspname !~ '^pg_toast';"
                       end
 
-        sql_result = sql.query(objects_sql, [database])
+        # sql_result = sql.query(objects_sql, [database])
 
-        describe.one do
-          describe sql_result do
-            its('output') { should eq '' }
-          end
+        # describe.one do
+        #   describe sql_result do
+        #     its('output') { should eq '' }
+        #   end
 
-          describe sql_result do
-            it { should match connection_error_regex }
+        #   describe sql_result do
+        #     it { should match connection_error_regex }
+        #   end
+        # end
+        describe "SQL Query results for database '#{database}' and relation type '#{type}'" do
+          sql_result = sql.query(functions_sql, [database])
+        
+          it 'Discretionary Access Control (DAC) or connection error' do
+            report_result("Policies check") do
+              expect(sql_result.output).to eq('') | match(connection_error_regex)
+            end
           end
         end
+      
       end
     end
   end
