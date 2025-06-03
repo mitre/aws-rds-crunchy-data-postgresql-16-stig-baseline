@@ -1039,7 +1039,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
         #   end
         # end
         describe "SQL Query results for database '#{database}' and relation type '#{type}'" do
-          sql_result = sql.query(functions_sql, [database])
+          sql_result = sql.query(objects_sql, [database])
         
           it 'Discretionary Access Control (DAC) or connection error' do
             report_result("Policies check") do
@@ -1481,12 +1481,25 @@ control 'SV-261922' do
 
     sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
 
-    describe sql.query('SHOW log_connections;', [input('pg_db')]) do
-      its('output') { should_not match /off|false/i }
-    end
+    # describe sql.query('SHOW log_connections;', [input('pg_db')]) do
+    #   its('output') { should_not match /off|false/i }
+    # end
 
-    describe sql.query('SHOW log_disconnections;', [input('pg_db')]) do
-      its('output') { should_not match /off|false/i }
+    # describe sql.query('SHOW log_disconnections;', [input('pg_db')]) do
+    #   its('output') { should_not match /off|false/i }
+    # end
+    describe "PostgreSQL logging settings" do
+      it "should have log_connections enabled" do
+        report_result("log_connections setting") do
+          expect(sql.query('SHOW log_connections;', [input('pg_db')]).output.strip.downcase).to eq('on')
+        end
+      end
+
+      it "should have log_disconnections enabled" do
+        report_result("log_disconnections setting") do
+          expect(sql.query('SHOW log_disconnections;', [input('pg_db')]).output.strip.downcase).to eq('on')
+        end
+      end
     end
 
     log_line_prefix_escapes = %w(%t %u %d %p)
