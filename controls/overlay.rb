@@ -645,7 +645,10 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
           # end
           describe "SQL query result for database '#{database}', schema '#{schema}', object '#{object}' and relation type '#{type}'" do
             it 'should not be owned by unauthorized users (OK)' do
-              expect(sql_result.output).to match(object_acl_regex).or match(pg_settings_acl_regex)
+              report_result("Ownership check") do
+                expect(sql_result.output).to match(object_acl_regex).or match(pg_settings_acl_regex)
+              end
+              # expect(sql_result.output).to match(object_acl_regex).or match(pg_settings_acl_regex)
             end
           end
           tested.push(obj)
