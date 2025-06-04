@@ -1,21 +1,26 @@
 # libraries/helper_methods.rb
 
-module CustomHelpers
+module ReportResultHelper
   def report_result(description)
-    yield
-    puts "#{description}: OK"
-  rescue RSpec::Expectations::ExpectationNotMetError => e
-    puts "#{description}: FAILED"
-    raise e
+    begin
+      yield
+      puts "PASS: #{description}"
+    rescue RSpec::Expectations::ExpectationNotMetError => e
+      puts "FAIL: #{description} - #{e.message}"
+      raise e
+    rescue StandardError => e
+      puts "ERROR: #{description} - #{e.message}"
+      raise e
+    end
   end
 end
 
-# Include the module so the methods are available globally
-# This is required in InSpec profiles
-# class ::Inspec::ProfileContext
-#   include CustomHelpers
-# end
-# This is the key line for overlays:
-class ::Inspec::Resources::ControlEvalContext
-  include CustomHelpers
+# Include the helper module in the InSpec DSL
+class Inspec::ProfileContext
+  include ReportResultHelper
+end
+
+# Include the helper module in RSpec example groups
+RSpec.configure do |config|
+  config.include ReportResultHelper
 end

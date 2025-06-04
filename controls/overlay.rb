@@ -1,10 +1,5 @@
 include_controls 'crunchy-data-postgresql-16-stig-baseline' do
-  control 'SV-261936' do
-    impact 0.0
-    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
-      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
-    end
-  end
+  require_relative '../libraries/helper_methods'
 
   control 'SV-261858' do
     impact 0.0
@@ -1320,6 +1315,13 @@ control 'SV-261922' do
   end
 
   control 'SV-261935' do
+    impact 0.0
+    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
+      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
+    end
+  end
+
+  control 'SV-261936' do
     impact 0.0
     describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
       skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
