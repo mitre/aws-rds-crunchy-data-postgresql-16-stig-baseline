@@ -1,6 +1,6 @@
 # libraries/helper_methods.rb
 
-module ReportResultHelper
+module CustomHelper
   def report_result(description)
     begin
       yield
@@ -11,6 +11,32 @@ module ReportResultHelper
     rescue StandardError => e
       puts "ERROR: #{description} - #{e.message}"
       raise e
+    end
+  end
+
+  class TableTypes
+    MAPPING = {
+      s: :sequence,
+      v: :view,
+      t: :table
+    }.freeze
+
+    class << self
+      MAPPING.each do |short, full|
+        define_method(short) { full }
+      end
+
+      def all
+        MAPPING.values
+      end
+
+      def from_short(short)
+        MAPPING[short.to_sym]
+      end
+
+      def to_short(name)
+        MAPPING.key(name.to_sym)
+      end
     end
   end
 end
