@@ -43,10 +43,10 @@ end
 
 # Include the helper module in the InSpec DSL
 class Inspec::ProfileContext
-  include ReportResultHelper
+  include CustomHelper
 end
 
 # Include the helper module in RSpec example groups
 RSpec.configure do |config|
-  config.include ReportResultHelper
+  config.include CustomHelper
 end
