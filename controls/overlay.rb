@@ -224,12 +224,23 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
       end
     end
 
-    describe sql.query('SHOW log_connections;', [input('pg_db')]) do
-      its('output') { should_not match /off|false/i }
-    end
+    # describe sql.query('SHOW log_connections;', [input('pg_db')]) do
+    #   its('output') { should_not match /off|false/i }
+    # end
 
-    describe sql.query('SHOW log_disconnections;', [input('pg_db')]) do
-      its('output') { should_not match /off|false/i }
+    # describe sql.query('SHOW log_disconnections;', [input('pg_db')]) do
+    #   its('output') { should_not match /off|false/i }
+    # end
+    describe 'PostgreSQL logging settings' do
+      it 'log_connections should not be off or false' do
+        result = sql.query('SHOW log_connections;', [input('pg_db')])
+        expect(result.output).not_to match(/off|false/i)
+      end
+
+      it 'log_disconnections should not be off or false' do
+        result = sql.query('SHOW log_disconnections;', [input('pg_db')])
+        expect(result.output).not_to match(/off|false/i)
+      end
     end
   end
 
@@ -732,9 +743,15 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
   control 'SV-261891' do
     sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
 
-    describe sql.query('SHOW password_encryption;', [input('pg_db')]) do
-      its('output') { should match /on|true|scram-sha-256/i }
-    end
+    # describe sql.query('SHOW password_encryption;', [input('pg_db')]) do
+    #   its('output') { should match /on|true|scram-sha-256/i }
+    # end
+    describe 'SHOW password_encryption setting' do
+      it 'should be enabled and set to on, true, or scram-sha-256' do
+        result = sql.query('SHOW password_encryption;', [input('pg_db')])
+        expect(result.output).to match(/on|true|scram-sha-256/i)
+      end
+    end 
   end
 
   control 'SV-261893' do
@@ -875,8 +892,14 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
   control 'SV-261908' do
     sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
 
-    describe sql.query('SHOW client_min_messages;', [input('pg_db')]) do
-      its('output') { should match /^error$/i }
+    # describe sql.query('SHOW client_min_messages;', [input('pg_db')]) do
+    #   its('output') { should match /^error$/i }
+    # end
+    describe 'Show client_min_messages setting' do
+      it 'should be set to error.' do
+        result = sql.query('SHOW client_min_messages;', [input('pg_db')])
+        expect(result.output).to match(/^error$/i)
+      end
     end
   end
 

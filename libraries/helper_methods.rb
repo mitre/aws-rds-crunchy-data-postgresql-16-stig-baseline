@@ -16,26 +16,48 @@ module CustomHelper
 
   class TableTypes
     MAPPING = {
+      a: :aggregate,
+      b: :base_type,      
+      c: :composite_type,
+      d: :domain,
+      e: :event_trigger,      
+      f: :foreign_table,
+      i: :index,
+      I: :partitioned_index,
+      l: :language,
+      m: :materialized_view,      
+      n: :namespace,
+      o: :operator,      
+      p: :partitioned_table,
+      r: :range_type,      
       s: :sequence,
+      S: :sequence,
+      t: :TOAST_table,
+      u: :user_defined_type,      
       v: :view,
-      t: :table
+      x: :extension,
     }.freeze
 
     class << self
-      MAPPING.each do |short, full|
-        define_method(short) { full }
-      end
+      # Create a new hash combining the original mapping with uppercase keys
+      CASE_INSENSITIVE_MAPPING = MAPPING.merge(
+        MAPPING.transform_keys { |key| key.to_s.upcase.to_sym }
+      ).freeze
 
+      # Return all full names from MAPPING
       def all
         MAPPING.values
       end
 
+      # Get the full name from a short (case-insensitive)
       def from_short(short)
-        MAPPING[short.to_sym]
+        CASE_INSENSITIVE_MAPPING[short.to_s.downcase.to_sym] || short.to_sym  # Return the original key if not found
       end
 
+      # Get the short name from the full name (case-insensitive)
       def to_short(name)
-        MAPPING.key(name.to_sym)
+        key = CASE_INSENSITIVE_MAPPING.key(name.to_sym)
+        key || name.to_sym  # Return the original name if not found
       end
     end
   end
