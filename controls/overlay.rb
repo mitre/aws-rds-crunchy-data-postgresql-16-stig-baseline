@@ -120,7 +120,10 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
     log_line_prefix_escapes.each do |escape|
       describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
-        its('output') { should include escape }
+        #its('output') { should include escape }
+        it "Should include the escape sequence '#{escape}' (#{escape_lookup[escape] || 'unknown description'}) in the output" do
+          expect(subject.output).to include(escape)
+        end
       end
     end
 
@@ -217,20 +220,27 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
     sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
 
-    log_line_prefix_escapes = %w(%t %u %d %p)
+    # Check log_line_prefix for required escapes
+    # %t = timestamp without milliseconds
+    # %u = user name
+    # %d = database name
+    # %p = process ID
+    # log_line_prefix_escapes = %w(%t %u %d %p)
+    # log_line_prefix_escapes.each do |escape|
+    #   describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
+    #     its('output') { should include escape }
+    #   end
+    # end
+
+    log_line_prefix_escapes = %w(%u %d %r %p %t)
     log_line_prefix_escapes.each do |escape|
       describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
-        its('output') { should include escape }
+        it "Should include the escape sequence '#{escape}' (#{escape_lookup[escape] || 'unknown description'}) in the output" do
+          expect(subject.output).to include(escape)
+        end
       end
     end
 
-    # describe sql.query('SHOW log_connections;', [input('pg_db')]) do
-    #   its('output') { should_not match /off|false/i }
-    # end
-
-    # describe sql.query('SHOW log_disconnections;', [input('pg_db')]) do
-    #   its('output') { should_not match /off|false/i }
-    # end
     describe 'PostgreSQL logging settings' do
       it 'log_connections should not be off or false' do
         result = sql.query('SHOW log_connections;', [input('pg_db')])
@@ -352,16 +362,11 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
       end
     end
 
-    # describe sql.query('SHOW log_hostname;', [input('pg_db')]) do
-    #   its('output') { should match /(on|true)/i }
-    # end
     describe 'PostgreSQL logging settings' do
       it 'should have log hostname enabled' do 
-        #report_result('log_hostname setting') do
         expect(
           sql.query('SHOW log_hostname;', [input('pg_db')]).output.strip.downcase
         ).to match(/^(on|true)$/)
-        #end
       end
     end
 
@@ -526,47 +531,20 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
       connection_error_regex = Regexp.new(connection_error)
 
       # Test the schema query resultes
-      # sql_result = sql.query(schemas_sql, [database])
-
-      # describe.one do
-      #   describe sql_result do
-      #     its('output') { should eq '' }
-      #   end
-
-      #   describe sql_result do
-      #     it { should match connection_error_regex }
-      #   end
-      # end
-      #owned by an authorized role for ownership
       describe "SQL query result for database '#{database}'" do
         sql_result = sql.query(schemas_sql, [database])
         
         it "should not return any 'schemas' owned by unauthorized users." do
-          #report_result("Ownership check") do
           expect(sql_result.lines.map(&:strip)).to be_empty.or match(connection_error_regex)
-          #end
         end
       end
       
       # Test the functions query results
-      # sql_result = sql.query(functions_sql, [database])
-
-      # describe.one do
-      #   describe sql_result do
-      #     its('output') { should eq '' }
-      #   end
-
-      #   describe sql_result do
-      #     it { should match connection_error_regex }
-      #   end
-      # end
       describe "SQL query result for database '#{database}'" do
         sql_result = sql.query(functions_sql, [database])
         
         it "should not return any 'functions' owned by unauthorized users." do
-          #report_result("Ownership check") do
           expect(sql_result.lines.map(&:strip)).to be_empty.or match(connection_error_regex)
-          #end
         end
       end
     
@@ -591,24 +569,11 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
             " AND n.nspname !~ '^pg_toast';"
         end
 
-        # sql_result = sql.query(objects_sql, [database])
-
-        # describe.one do
-        #   describe sql_result do
-        #     its('output') { should eq '' }
-        #   end
-
-        #   describe sql_result do
-        #     it { should match connection_error_regex }
-        #   end
-        # end
         describe "SQL query result for database '#{database}' and relation '#{CustomHelper::TableTypes.from_short(type)}'" do
           sql_result = sql.query(objects_sql, [database])
           
           it "should not return any 'objects' owned by unauthorized users." do
-            #report_result("Ownership check") do
             expect(sql_result.lines.map(&:strip)).to be_empty.or match(connection_error_regex)
-            #end
           end
         end
       end
@@ -662,20 +627,9 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
           sql_result = sql.query(relacl_sql, [database])
 
-          # describe.one do
-          #   describe sql_result do
-          #     its('output') { should match object_acl_regex }
-          #   end
-
-          #   describe sql_result do
-          #     its('output') { should match pg_settings_acl_regex }
-          #   end
-          # end
-          describe "SQL query result for database '#{database}', schema '#{schema}', object '#{object}' and relation type '#{type}'" do
+          describe "SQL query result for database '#{database}', schema '#{schema}', object '#{object}' and relation type '#{CustomHelper::TableTypes.from_short(type)}'" do
             it 'should not be owned by unauthorized users.' do
-              #report_result("Ownership check") do
               expect(sql_result.output).to match(object_acl_regex).or match(pg_settings_acl_regex)
-              #end
             end
           end
           tested.push(obj)
@@ -743,9 +697,6 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
   control 'SV-261891' do
     sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
 
-    # describe sql.query('SHOW password_encryption;', [input('pg_db')]) do
-    #   its('output') { should match /on|true|scram-sha-256/i }
-    # end
     describe 'SHOW password_encryption setting' do
       it 'should be enabled and set to on, true, or scram-sha-256' do
         result = sql.query('SHOW password_encryption;', [input('pg_db')])
@@ -892,9 +843,6 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
   control 'SV-261908' do
     sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
 
-    # describe sql.query('SHOW client_min_messages;', [input('pg_db')]) do
-    #   its('output') { should match /^error$/i }
-    # end
     describe 'Show client_min_messages setting' do
       it 'should be set to error.' do
         result = sql.query('SHOW client_min_messages;', [input('pg_db')])
@@ -994,45 +942,19 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
         'accepting connections'
       connection_error_regex = Regexp.new(connection_error)
 
-      #sql_result = sql.query(schemas_sql, [database])
-
-      # describe.one do
-      #   describe sql_result do
-      #     its('output') { should eq '' }
-      #   end
-
-      #   describe sql_result do
-      #     it { should match connection_error_regex }
-      #   end
-      # end
       describe "Discretionary Access Control (DAC) for database '#{database}' schemas" do
         sql_result = sql.query(schemas_sql, [database])
 
         it 'should only be granted to legitimate users (owners).' do
-          #report_result("Policies check") do
-          expect(sql_result.output).to eq('') | match(connection_error_regex)
-          #end
+           expect(sql_result.output).to eq('') | match(connection_error_regex)
         end
       end
 
-      # sql_result = sql.query(functions_sql, [database])
-
-      # describe.one do
-      #   describe sql_result do
-      #     its('output') { should eq '' }
-      #   end
-
-      #   describe sql_result do
-      #     it { should match connection_error_regex }
-      #   end
-      # end
       describe "Discretionary Access Control (DAC) for database '#{database}' functions" do
         sql_result = sql.query(functions_sql, [database])
       
         it 'should only be granted to legitimate users (owners).' do
-          #report_result("Policies check") do
           expect(sql_result.output).to eq('') | match(connection_error_regex)
-          #end
         end
       end
 
@@ -1055,24 +977,11 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
                           " AND n.nspname !~ '^pg_toast';"
                       end
 
-        # sql_result = sql.query(objects_sql, [database])
-
-        # describe.one do
-        #   describe sql_result do
-        #     its('output') { should eq '' }
-        #   end
-
-        #   describe sql_result do
-        #     it { should match connection_error_regex }
-        #   end
-        # end
         describe "Discretionary Access Control (DAC) for database '#{database}' and relation type '#{CustomHelper::TableTypes.from_short(type)}'" do
           sql_result = sql.query(objects_sql, [database])
         
           it 'should only be granted to legitimate users (owners).' do
-            #report_result("Policies check") do
             expect(sql_result.output).to eq('') | match(connection_error_regex)
-            #end
           end
         end
       
@@ -1516,24 +1425,13 @@ control 'SV-261922' do
 
     sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
 
-    # describe sql.query('SHOW log_connections;', [input('pg_db')]) do
-    #   its('output') { should_not match /off|false/i }
-    # end
-
-    # describe sql.query('SHOW log_disconnections;', [input('pg_db')]) do
-    #   its('output') { should_not match /off|false/i }
-    # end
     describe "PostgreSQL logging settings" do
       it "should have log_connections enabled." do
-        #report_result("log_connections setting") do
         expect(sql.query('SHOW log_connections;', [input('pg_db')]).output.strip.downcase).to eq('on')
-        #end
       end
 
       it "should have log_disconnections enabled." do
-        ##report_result("log_disconnections setting") do
         expect(sql.query('SHOW log_disconnections;', [input('pg_db')]).output.strip.downcase).to eq('on')
-        #end
       end
     end
 
