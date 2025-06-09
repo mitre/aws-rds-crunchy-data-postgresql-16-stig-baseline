@@ -1,9 +1,6 @@
 include_controls 'crunchy-data-postgresql-16-stig-baseline' do
   require_relative '../libraries/helper_methods'
 
-  # Include the CustomHelper module to access its methods
-  include CustomHelper
-
   control 'SV-261858' do
     impact 0.0
     describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
@@ -123,7 +120,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
     log_line_prefix_escapes.each do |escape|
       describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
-        it "Should include the escape sequence '#{escape}' (#{escape_lookup[escape] || 'unknown description'}) in the output" do
+        it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
           expect(subject.output).to include(escape)
         end
       end
@@ -237,7 +234,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     log_line_prefix_escapes = %w(%u %d %r %p %t)
     log_line_prefix_escapes.each do |escape|
       describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
-        it "Should include the escape sequence '#{escape}' (#{escape_lookup[escape] || 'unknown description'}) in the output" do
+        it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
           expect(subject.output).to include(escape)
         end
       end

@@ -6,18 +6,13 @@ module CustomHelper
   #
   # @return [Hash{String => String}] a mapping of escape sequences (e.g., '%d', '%p') to their meanings
   #
-  # Example:
-  #   escape_lookup
-  #   # => { '%d' => 'database name', '%p' => 'process ID', ... }
-  def escape_lookup
-    {
-      '%d' => 'database name',
-      '%p' => 'process ID',
-      '%r' => 'remote host and port',
-      '%t' => 'timestamp without milliseconds',
-      '%u' => 'user name'
-    }
-  end
+  ESCAPE_LOOKUP = {
+    '%d' => 'database name',
+    '%p' => 'process ID',
+    '%r' => 'remote host and port',
+    '%t' => 'timestamp without milliseconds',
+    '%u' => 'user name'
+  }.freeze
 
 
   # TableTypes provides utility methods for mapping between PostgreSQL table type short codes
