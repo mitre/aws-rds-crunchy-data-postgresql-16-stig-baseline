@@ -35,9 +35,14 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
       authorized_owners = input('pg_system_resource_users')
       owners = authorized_owners.join('|')
 
-
       object_granted_privileges = 'arwd(DxtU?|)?'
       object_public_privileges = 'r'
+      # Regex to match the format of the relacl column in pg_class
+      # It allows multiple entries separated by commas, with each entry in the format
+      # owner=privileges/role, where owner is a role name and privileges is a string of
+      # granted privileges, and role is the role name to which the privileges are granted.
+      # The regex also allows for an entry with just =privileges/role, which means that the
+      # privileges are granted to the public role.
       object_acl = "^((((?:#{owners}|\\w+)=[#{object_granted_privileges}]+|"\
         "=[#{object_public_privileges}]+)\/\\w+,?)+|)\\|"
       object_acl_regex = Regexp.new(object_acl)
@@ -586,13 +591,20 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
       object_granted_privileges = 'arwdDxtU'
       object_public_privileges = 'r'
+      # Regex to match the pg_class table ACLs
+      # It allows pg_catalog and information_schema to have read and view privileges
+      # It allows the owner to have all privileges
+      # It allows the public to have read privileges
       object_acl = "^((((#{owners})=[#{object_granted_privileges}]+|"\
         "=[#{object_public_privileges}]+)\/\\w+,?)+|)\\|"
       object_acl_regex = Regexp.new(object_acl)
 
+      # Regex to match the pg_settings table ACLs
+      # It allows superusers and system resource users to have all privileges
+      # It allows public to have read and write privileges
+      # It allows pg_catalog and information_schema to have read and view privileges
       pg_settings_acl = "^((((#{supperusers})=[#{object_granted_privileges}]+|"\
         "=(#{object_public_privileges}|rw))\/\\w+,?)+)|pg_catelog\|\w+\|(r|v)"
-        
       pg_settings_acl_regex = Regexp.new(pg_settings_acl)
 
       tested = []
@@ -764,6 +776,15 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     pg_object_public_privileges = input('pg_object_public_privileges')
     pg_object_exceptions = input('pg_object_exceptions')
     exceptions = "#{pg_object_exceptions.map { |e| "'#{e}'" }.join(',')}"
+
+    # Regex to match the pg_class table ACLs
+    # It allows pg_catalog and information_schema to have read and view privileges
+    # It allows the public to have read privileges
+    # It allows rdsadmin to have all privileges
+    # It allows the pg_owner to have all privileges
+    # It allows the pg_object_granted_privileges to have all privileges
+    # It allows the pg_object_public_privileges to have read privileges
+    # It allows the pg_object_exceptions to have all privileges
     object_acl = "^(((#{pg_owner}|rdsadmin=[#{pg_object_granted_privileges}]+|"\
       "=[#{pg_object_public_privileges}]+)\\/\\w+,?)+|)$"
     schemas = ['pg_catalog', 'information_schema']
@@ -1106,11 +1127,23 @@ control 'SV-261922' do
 
     database_granted_privileges = 'CTc'
     database_public_privileges = 'Tc'
+
+    # Regex to match the pg_database table ACLs
+    # It allows pg_catalog and information_schema to have read and view privileges
+    # It allows the owner to have all privileges
+    # It allows the public to have read privileges
+    # It allows the granted privileges to have create and temporary privileges
     database_acl = "((?:=#{database_public_privileges}\/)|(?:=#{database_granted_privileges}\/)*)(#{owners})(?:,(#{owners}))*"
     database_acl_regex = Regexp.new(database_acl)
 
     schema_granted_privileges = 'UC'
     schema_public_privileges = 'U'
+
+    # Regex to match the pg_namespace table ACLs
+    # It allows pg_catalog and information_schema to have read and view privileges
+    # It allows the owner to have all privileges
+    # It allows the public to have update privileges
+    # It allows the granted privileges to have create privileges
     schema_acl = "(?:(#{owners})*)((?:=#{schema_granted_privileges}\/)|(?:=#{schema_public_privileges}\/))*(\s?|\w+)?"
     schema_acl_regex = Regexp.new(schema_acl)
 
