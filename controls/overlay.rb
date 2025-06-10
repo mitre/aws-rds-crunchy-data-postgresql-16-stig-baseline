@@ -1,43 +1,10 @@
 include_controls 'crunchy-data-postgresql-16-stig-baseline' do
-  control 'SV-261889' do
-    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
-
-    describe sql.query('SHOW port;', [input('pg_db')]) do
-      its('output') { should eq input('pg_port') }
-    end
-  end
-
-  control 'SV-261870' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261936' do
-    impact 0.0
-    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
-      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
-    end
-  end
-
-  control 'SV-261876' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
+  require_relative '../libraries/helper_methods'
 
   control 'SV-261858' do
     impact 0.0
     describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
       skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
-    end
-  end
-
-  control 'SV-261908' do
-    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
-
-    describe sql.query('SHOW client_min_messages;', [input('pg_db')]) do
-      its('output') { should match /^error$/i }
     end
   end
 
@@ -64,13 +31,19 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
         end
       end
 
-      #authorized_owners = input('pg_superusers')
+
       authorized_owners = input('pg_system_resource_users')
       owners = authorized_owners.join('|')
 
-      object_granted_privileges = 'arwdDxtU'
+      object_granted_privileges = 'arwd(DxtU?|)?'
       object_public_privileges = 'r'
-      object_acl = "^((((#{owners})=[#{object_granted_privileges}]+|"\
+      # Regex to match the format of the relacl column in pg_class
+      # It allows multiple entries separated by commas, with each entry in the format
+      # owner=privileges/role, where owner is a role name and privileges is a string of
+      # granted privileges, and role is the role name to which the privileges are granted.
+      # The regex also allows for an entry with just =privileges/role, which means that the
+      # privileges are granted to the public role.
+      object_acl = "^((((?:#{owners}|\\w+)=[#{object_granted_privileges}]+|"\
         "=[#{object_public_privileges}]+)\/\\w+,?)+|)\\|"
       object_acl_regex = Regexp.new(object_acl)
 
@@ -101,1030 +74,6 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
           describe sql.query(relacl_sql, [database]) do
             its('output') { should match object_acl_regex }
           end
-        end
-      end
-    end
-  end
-
-  control 'SV-261913' do
-    describe 'A manual review is required to ensure PostgreSQL associates organization-defined types of security labels
-    having organization-defined security label values with information in transmission' do
-      skip 'A manual review is required to ensure PostgreSQL associates organization-defined types of security labels
-      having organization-defined security label values with information in transmission'
-    end
-  end
-  
-  control 'SV-261881' do
-    impact 0.0
-    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
-      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
-    end
-  end
-  control 'SV-261909' do
-    
-    
-      sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
-      describe sql.query('SHOW client_min_messages;',  [input('pg_db')]) do
-        its('output') { should match (/^error$/i) }
-        end
-      describe "Log File permissions are not applicable to AWS RDS" do
-        skip "Log File permissions are not applicable to AWS RDS"
-        #This portion of the control is not applicable to AWS RDS systems
-        #describe sql.query('SHOW log_file_mode;',  [input('pg_db')]) do  
-        #  its('output') { should cmp '0600' }
-      end
-
-  end
-
-  control 'SV-261917' do
-    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
-          describe 'This control is partially not applicable on postgres 16 within aws rds and that portion has been removed, as aws manages the operating system on which the postgres database is running' do
-            skip "This control is partially not applicable on postgres 16 within aws rds and that portion has been removed, as aws manages the operating system on which the postgres database is running"
-            # this is the portion of the control that is not applicable to AWS RDS
-            # describe sql.query('SHOW log_destination;', [input('pg_db')]) do
-            #  its('output') { should include 'syslog' }
-          end
-      
-      
-      describe sql.query('SHOW syslog_facility;', [input('pg_db')]) do
-        its('output') { should cmp 'LOCAL0' }    
-      end
-    
-  end
-  control 'SV-261885' do
-    if !input('windows_runner')
-      sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
-      authorized_owners = input('pg_superusers')
-      supperusers = authorized_owners.join('|')
-      authorized_owners = input('pg_system_resource_users')
-      owners = authorized_owners.join('|')
-
-      object_granted_privileges = 'arwdDxtU'
-      object_public_privileges = 'r'
-      object_acl = "^((((#{owners})=[#{object_granted_privileges}]+|"\
-        "=[#{object_public_privileges}]+)\/\\w+,?)+|)\\|"
-      object_acl_regex = Regexp.new(object_acl)
-
-      # pg_settings_acl = "^((((#{supperusers})=[#{object_granted_privileges}]+|"\
-      #   "=rw)\/\\w+,?)+)\\|pg_catalog\\|pg_settings\\|v"
-      pg_settings_acl = "^((((#{supperusers})=[#{object_granted_privileges}]+|"\
-        "=(#{object_public_privileges}|rw))\/\\w+,?)+)|pg_catelog\|\w+\|(r|v)"
-        
-      pg_settings_acl_regex = Regexp.new(pg_settings_acl)
-
-      tested = []
-      objects_sql = 'SELECT n.nspname, c.relname, c.relkind '\
-        'FROM pg_catalog.pg_class c '\
-        'LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace '\
-        "WHERE c.relkind IN ('r', 'v', 'm', 'S', 'f');"
-
-      databases_sql = 'SELECT datname FROM pg_catalog.pg_database where not datistemplate AND datname != \'rdsadmin\';'
-      databases_query = sql.query(databases_sql, [input('pg_db')])
-      databases = databases_query.lines
-
-      databases.each do |database|
-        rows = sql.query(objects_sql, [database])
-        next unless rows.methods.include?(:output) # Handle connection disabled on database
-        objects = rows.lines
-
-        objects.each do |obj|
-          next if tested.include?(obj)
-          schema, object, type = obj.split('|')
-          relacl_sql = "SELECT pg_catalog.array_to_string(c.relacl, E','), "\
-            'n.nspname, c.relname, c.relkind FROM pg_catalog.pg_class c '\
-            'LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace '\
-            "WHERE n.nspname = '#{schema}' AND c.relname = '#{object}' "\
-            "AND c.relkind = '#{type}';"
-
-          sql_result = sql.query(relacl_sql, [database])
-
-          describe.one do
-            describe sql_result do
-              its('output') { should match object_acl_regex }
-            end
-
-            describe sql_result do
-              its('output') { should match pg_settings_acl_regex }
-            end
-          end
-          tested.push(obj)
-        end
-      end
-    else
-      describe 'This must be manually reviewed at this time' do
-        skip 'This must be manually reveiwed at this time'
-      end
-    end
-  end
-    
-  control 'SV-261911' do 
-    describe 'A manual review is required to ensure PostgreSQL associates organization-defined types of security labels
-    having organization-defined security label values with information in storage' do
-      skip 'A manual review is required to ensure PostgreSQL associates organization-defined types of security labels
-    having organization-defined security label values with information in storage'
-    end
-  end
-
-  control 'SV-261905' do
-    describe 'A manual review is required to ensure PostgreSQL checks the validity of all data inputs except those
-    specifically identified by the organization' do
-      skip 'A manual review is required to ensure PostgreSQL checks the validity of all data inputs except those
-    specifically identified by the organization'
-    end
-  end
-
-  control 'SV-261906' do
-    describe 'A manual review is require to ensure PostgreSQL and associated applications reserve the use of dynamic
-    code execution for situations that require it.' do
-      skip 'A manual review is require to ensure PostgreSQL and associated applications reserve the use of dynamic
-    code execution for situations that require it.'
-    end
-  end
-
-  control 'SV-261907' do
-    describe 'PostgreSQL and associated applications, when making use of dynamic code
-    execution, must scan input data for invalid values that may indicate a code injection attack' do
-      skip 'PostgreSQL and associated applications, when making use of dynamic code
-    execution, must scan input data for invalid values that may indicate a code injection attack'
-    end
-  end
-
-  control 'SV-261918' do
-    describe 'A manual review is required to ensure PostgreSQL allocates audit record storage capacity in accordance
-    with organization-defined audit record storage requirements' do
-      skip 'A manual review is required to ensure PostgreSQL allocates audit record storage capacity in accordance
-    with organization-defined audit record storage requirements'
-    end
-  end
-
-  control 'SV-261914' do
-    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
-
-    authorized_owners = input('rds_superusers')
-    pg_db = input('pg_db')
-    pg_owner = input('pg_owner')
-
-    databases_sql = "SELECT datname FROM pg_catalog.pg_database where datname = '#{pg_db}';"
-    databases_query = sql.query(databases_sql, [pg_db])
-    databases = databases_query.lines
-    types = %w(t s v) # tables, sequences views
-
-    databases.each do |database|
-      schemas_sql = ''
-      functions_sql = ''
-
-      if database == 'postgres'
-        schemas_sql = 'SELECT n.nspname, pg_catalog.pg_get_userbyid(n.nspowner) '\
-          'FROM pg_catalog.pg_namespace n '\
-          "WHERE pg_catalog.pg_get_userbyid(n.nspowner) <> '#{pg_owner}' AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin';"
-        functions_sql = 'SELECT n.nspname, p.proname, '\
-          'pg_catalog.pg_get_userbyid(n.nspowner) '\
-          'FROM pg_catalog.pg_proc p '\
-          'LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace '\
-          "WHERE pg_catalog.pg_get_userbyid(n.nspowner) <> '#{pg_owner}' AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin';"
-      else
-        schemas_sql = 'SELECT n.nspname, pg_catalog.pg_get_userbyid(n.nspowner) '\
-          'FROM pg_catalog.pg_namespace n '\
-          'WHERE pg_catalog.pg_get_userbyid(n.nspowner) '\
-          "NOT IN (#{authorized_owners.map { |e| "'#{e}'" }.join(',')}) AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin' "\
-          "AND n.nspname !~ '^pg_' AND n.nspname <> 'information_schema';"
-        functions_sql = 'SELECT n.nspname, p.proname, '\
-          'pg_catalog.pg_get_userbyid(n.nspowner) '\
-          'FROM pg_catalog.pg_proc p '\
-          'LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace '\
-          'WHERE pg_catalog.pg_get_userbyid(n.nspowner) '\
-          "NOT IN (#{authorized_owners.map { |e| "'#{e}'" }.join(',')}) AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin' "\
-          "AND n.nspname <> 'pg_catalog' AND n.nspname <> 'information_schema';"
-      end
-
-      connection_error = "FATAL:\\s+database \"#{database}\" is not currently "\
-        'accepting connections'
-      connection_error_regex = Regexp.new(connection_error)
-
-      sql_result = sql.query(schemas_sql, [database])
-
-      describe.one do
-        describe sql_result do
-          its('output') { should eq '' }
-        end
-
-        describe sql_result do
-          it { should match connection_error_regex }
-        end
-      end
-
-      sql_result = sql.query(functions_sql, [database])
-
-      describe.one do
-        describe sql_result do
-          its('output') { should eq '' }
-        end
-
-        describe sql_result do
-          it { should match connection_error_regex }
-        end
-      end
-
-      types.each do |type|
-        objects_sql = if database == 'postgres'
-                        'SELECT n.nspname, c.relname, c.relkind, '\
-                          'pg_catalog.pg_get_userbyid(n.nspowner) FROM pg_catalog.pg_class c '\
-                          'LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace '\
-                          "WHERE c.relkind IN ('#{type}','s','') "\
-                          "AND pg_catalog.pg_get_userbyid(n.nspowner) <> '#{pg_owner}' AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin' "\
-                          " AND n.nspname !~ '^pg_toast';"
-                      else
-                        'SELECT n.nspname, c.relname, c.relkind, '\
-                          'pg_catalog.pg_get_userbyid(n.nspowner) FROM pg_catalog.pg_class c '\
-                          'LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace '\
-                          "WHERE c.relkind IN ('#{type}','s','') "\
-                          'AND pg_catalog.pg_get_userbyid(n.nspowner) '\
-                          "NOT IN (#{authorized_owners.map { |e| "'#{e}'" }.join(',')}) AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin' "\
-                          "AND n.nspname <> 'pg_catalog' AND n.nspname <> 'information_schema'"\
-                          " AND n.nspname !~ '^pg_toast';"
-                      end
-
-        sql_result = sql.query(objects_sql, [database])
-
-        describe.one do
-          describe sql_result do
-            its('output') { should eq '' }
-          end
-
-          describe sql_result do
-            it { should match connection_error_regex }
-          end
-        end
-      end
-    end
-  end
-
-  control 'SV-261877' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261862' do
-    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
-
-    roles_sql = 'SELECT r.rolname FROM pg_catalog.pg_roles r;'
-    roles_query = sql.query(roles_sql, [input('pg_db')])
-    roles = roles_query.lines
-
-    roles.each do |role|
-      next if input('pg_superusers').include?(role)
-      superuser_sql = 'SELECT r.rolsuper FROM pg_catalog.pg_roles r '\
-        "WHERE r.rolname = '#{role}';"
-
-      describe sql.query(superuser_sql, [input('pg_db')]) do
-        its('output') { should_not eq 't' }
-      end
-    end
-  end
-
-  control 'SV-261920' do
-    describe 'A manual review is required to ensure PostgreSQL provides an immediate real-time alert to appropriate
-      support staff of all audit failure events requiring real-time alerts' do
-      skip 'A manual review is required to ensure PostgreSQL provides an immediate real-time alert to appropriate
-      support staff of all audit failure events requiring real-time alerts'
-    end
-  end
-
-  control 'SV-261884' do
-    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
-    authorized_owners = input('rds_superusers')
-    pg_owner = input('pg_owner')
-    pg_db = input('pg_db')
-
-    databases_sql = "SELECT datname FROM pg_catalog.pg_database where datname = '#{pg_db}';"
-    databases_query = sql.query(databases_sql, [input('pg_db')])
-    databases = databases_query.lines
-    types = %w(t s v) # tables, sequences views
-
-    databases.each do |database|
-      schemas_sql = ''
-      functions_sql = ''
-
-      if database == 'postgres'
-        schemas_sql = 'SELECT n.nspname, pg_catalog.pg_get_userbyid(n.nspowner) '\
-          'FROM pg_catalog.pg_namespace n '\
-          "WHERE pg_catalog.pg_get_userbyid(n.nspowner) <> '#{pg_owner}' AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin';"
-        functions_sql = 'SELECT n.nspname, p.proname, '\
-          'pg_catalog.pg_get_userbyid(n.nspowner) '\
-          'FROM pg_catalog.pg_proc p '\
-          'LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace '\
-          "WHERE pg_catalog.pg_get_userbyid(n.nspowner) <> '#{pg_owner}' AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin';"
-      else
-        schemas_sql = 'SELECT n.nspname, pg_catalog.pg_get_userbyid(n.nspowner) '\
-          'FROM pg_catalog.pg_namespace n '\
-          'WHERE pg_catalog.pg_get_userbyid(n.nspowner) '\
-          "NOT IN (#{authorized_owners.map { |e| "'#{e}'" }.join(',')}) AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin' "\
-          "AND n.nspname !~ '^pg_' AND n.nspname <> 'information_schema';"
-        functions_sql = 'SELECT n.nspname, p.proname, '\
-          'pg_catalog.pg_get_userbyid(n.nspowner) '\
-          'FROM pg_catalog.pg_proc p '\
-          'LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace '\
-          'WHERE pg_catalog.pg_get_userbyid(n.nspowner) '\
-          "NOT IN (#{authorized_owners.map { |e| "'#{e}'" }.join(',')}) AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin' "\
-          "AND n.nspname <> 'pg_catalog' AND n.nspname <> 'information_schema';"
-      end
-
-      connection_error = "FATAL:\\s+database \"#{database}\" is not currently "\
-        'accepting connections'
-      connection_error_regex = Regexp.new(connection_error)
-
-      sql_result = sql.query(schemas_sql, [database])
-
-      describe.one do
-        describe sql_result do
-          its('output') { should eq '' }
-        end
-
-        describe sql_result do
-          it { should match connection_error_regex }
-        end
-      end
-
-      sql_result = sql.query(functions_sql, [database])
-
-      describe.one do
-        describe sql_result do
-          its('output') { should eq '' }
-        end
-
-        describe sql_result do
-          it { should match connection_error_regex }
-        end
-      end
-
-      types.each do |type|
-        objects_sql = ''
-
-        if database == 'postgres'
-          objects_sql = 'SELECT n.nspname, c.relname, c.relkind, '\
-            'pg_catalog.pg_get_userbyid(n.nspowner) FROM pg_catalog.pg_class c '\
-            'LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace '\
-            "WHERE c.relkind IN ('#{type}','s','') "\
-            "AND pg_catalog.pg_get_userbyid(n.nspowner) <> '#{pg_owner}' AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin' "
-          "AND n.nspname !~ '^pg_toast';"
-        else
-          objects_sql = 'SELECT n.nspname, c.relname, c.relkind, '\
-            'pg_catalog.pg_get_userbyid(n.nspowner) FROM pg_catalog.pg_class c '\
-            'LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace '\
-            "WHERE c.relkind IN ('#{type}','s','') "\
-            'AND pg_catalog.pg_get_userbyid(n.nspowner) '\
-            "NOT IN (#{authorized_owners.map { |e| "'#{e}'" }.join(',')}) AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin' "\
-            "AND n.nspname <> 'pg_catalog' AND n.nspname <> 'information_schema'"\
-            " AND n.nspname !~ '^pg_toast';"
-        end
-
-        sql_result = sql.query(objects_sql, [database])
-
-        describe.one do
-          describe sql_result do
-            its('output') { should eq '' }
-          end
-
-          describe sql_result do
-            it { should match connection_error_regex }
-          end
-        end
-      end
-    end
-  end
-
-  control 'SV-261882' do
-    impact 0.0
-    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
-      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
-    end
-  end
-
-  control 'SV-261883' do
-    impact 0.0
-    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
-      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
-    end
-  end
-
-  control 'SV-261872' do
-    describe 'A manual review is required to ensure PostgreSQL includes additional, more detailed, organization-defined
-      information in the audit records for audit events identified by type,
-      location, or subject' do
-      skip 'A manual review is required to ensure PostgreSQL includes additional, more detailed, organization-defined
-      information in the audit records for audit events identified by type,
-      location, or subject'
-    end
-  end
-
-  control 'SV-261916' do
-    desc 'check', 'Functions in PostgreSQL can be created with the SECURITY DEFINER
-    option. When SECURITY DEFINER functions are executed by a user, said function
-    is run with the privileges of the user who created it.
-    To list all functions that have SECURITY DEFINER, as, the DBA (shown here as "postgres"), run the following SQL:
-    $ sudo su - postgres
-    $ psql -c "SELECT nspname, proname, proargtypes, prosecdef, rolname, proconfig
-    FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid JOIN pg_roles a
-    ON a.oid = p.proowner WHERE prosecdef OR NOT proconfig IS NULL"
-    In the query results, a prosecdef value of "t" on a row indicates that that
-    function uses privilege elevation.
-    If elevation of PostgreSQL privileges is utilized but not documented, this is a
-    finding.
-    If elevation of PostgreSQL privileges is documented, but not implemented as
-    described in the documentation, this is a finding.
-    If the privilege-elevation logic can be invoked in ways other than intended, or
-    in contexts other than intended, or by subjects/principals other than intended,
-    this is a finding.'
-
-    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
-    pg_db = input('pg_db')
-
-    security_definer_sql = 'SELECT nspname, proname, prosecdef '\
-      'FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid '\
-      "JOIN pg_roles a ON a.oid = p.proowner WHERE prosecdef = 't';"
-
-    databases_sql = "SELECT datname FROM pg_catalog.pg_database where datname = '#{pg_db}';"
-    databases_query = sql.query(databases_sql, [pg_db])
-    databases = databases_query.lines
-
-    databases.each do |database|
-      connection_error = "FATAL:\\s+database \"#{database}\" is not currently "\
-        'accepting connections'
-      connection_error_regex = Regexp.new(connection_error)
-
-      sql_result = sql.query(security_definer_sql, [database])
-
-      describe.one do
-        describe sql_result do
-          its('output') { should eq '' }
-        end
-
-        describe sql_result do
-          it { should match connection_error_regex }
-        end
-      end
-    end
-  end
-
-  control 'SV-261934' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261902' do
-    pg_owner = input('pg_owner')
-    pg_dba = input('pg_dba')
-    pg_dba_password = input('pg_dba_password')
-    pg_db = input('pg_db')
-    pg_host = input('pg_host')
-    pg_object_granted_privileges = input('pg_object_granted_privileges')
-    pg_object_public_privileges = input('pg_object_public_privileges')
-    pg_object_exceptions = input('pg_object_exceptions')
-    exceptions = "#{pg_object_exceptions.map { |e| "'#{e}'" }.join(',')}"
-    object_acl = "^(((#{pg_owner}|rdsadmin=[#{pg_object_granted_privileges}]+|"\
-      "=[#{pg_object_public_privileges}]+)\\/\\w+,?)+|)$"
-    schemas = ['pg_catalog', 'information_schema']
-    sql = postgres_session(pg_dba, pg_dba_password, pg_host, input('pg_port'))
-
-    schemas.each do |schema|
-      objects_sql = 'SELECT n.nspname, c.relname, c.relkind, '\
-        "pg_catalog.array_to_string(c.relacl, E',') FROM pg_catalog.pg_class c "\
-        'LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace '\
-        "WHERE c.relkind IN ('r', 'v', 'm', 'S', 'f') "\
-        "AND n.nspname ~ '^(#{schema})$' "\
-        "AND pg_catalog.array_to_string(c.relacl, E',') !~ '#{object_acl}' "\
-        "AND c.relname NOT IN (#{exceptions});"
-
-      describe sql.query(objects_sql, [pg_db]) do
-        its('output') { should eq '' }
-      end
-
-      functions_sql = 'SELECT n.nspname, p.proname, '\
-        'pg_catalog.pg_get_userbyid(n.nspowner) '\
-        'FROM pg_catalog.pg_proc p '\
-        'LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace '\
-        "WHERE n.nspname ~ '^(#{schema})$' "\
-        "AND pg_catalog.pg_get_userbyid(n.nspowner) <> '#{pg_owner}' AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin';"
-
-      describe sql.query(functions_sql, [pg_db]) do
-        its('output') { should eq '' }
-      end
-    end
-  end
-
-  control 'SV-261925' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261875' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261935' do
-    impact 0.0
-    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
-      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
-    end
-  end
-
-  control 'SV-261940' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261939' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261957' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261960' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261947' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261942' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261955' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261956' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261952' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261864' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261951' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261863' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261949' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261963' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261941' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261938' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261950' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261961' do
-    desc 'check', 'First, as the database administrator, verify that log_connections
-    and log_disconnections are enabled by running the following SQL:
-    $ sudo su - postgres
-    $ psql -c "SHOW log_connections"
-    $ psql -c "SHOW log_disconnections"
-    If either is off, this is a finding.
-    Next, verify that log_line_prefix contains sufficient information by running
-    the following SQL:
-    $ sudo su - postgres
-    $ psql -c "SHOW log_line_prefix"
-    If log_line_prefix does not contain at least %t %u %d %p, this is a finding.'
-
-    desc 'fix', %q[Note: The following instructions use the PGDATA and PGVER
-    environment variables. See supplementary content APPENDIX-F for instructions on
-    configuring PGDATA and APPENDIX-H for PGVER.
-    To ensure that logging is enabled, review supplementary content APPENDIX-C for
-    instructions on enabling logging.
-    First, as the database administrator (shown here as "postgres"), edit
-    postgresql.conf:
-    $ sudo su - postgres
-    $ vi ${PGDATA?}/postgresql.conf
-    Edit the following parameters as such:
-    log_connections = on
-    log_disconnections = on
-    log_line_prefix = '< %t %u %d %p: >'
-    Where:
-    * %t is the time and date without milliseconds
-    * %u is the username
-    * %d is the database
-    * %p is the Process ID for the connection
-    Now, as the system administrator, reload the server with the new configuration:
-    # SYSTEMD SERVER ONLY
-    $ sudo systemctl reload postgresql-${PGVER?}
-    # INITD SERVER ONLY
-    $ sudo service postgresql-${PGVER?} reload"]
-
-    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
-
-    describe sql.query('SHOW log_connections;', [input('pg_db')]) do
-      its('output') { should_not match /off|false/i }
-    end
-
-    describe sql.query('SHOW log_disconnections;', [input('pg_db')]) do
-      its('output') { should_not match /off|false/i }
-    end
-
-    log_line_prefix_escapes = %w(%t %u %d %p)
-
-    log_line_prefix_escapes.each do |escape|
-      describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
-        its('output') { should include escape }
-      end
-    end
-  end
-
-  control 'SV-261953' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261944' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261959' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261946' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261948' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261945' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261943' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
-    end
-  end
-
-  control 'SV-261893' do
-    impact 0.0
-    describe 'This control is not applicable on postgres within aws rds, as aws manages this capability' do
-      skip 'This control is not applicable on postgres within aws rds, as aws manages this capability'
-    end
-  end
-
-  control 'SV-261922' do
-    desc 'check', 'Note: The following instructions use the PGDATA environment
-    variable. See supplementary content APPENDIX-F for instructions on configuring
-    PGDATA.
-    First, as the database administrator (shown here as "postgres"), verify the
-    current log_line_prefix setting by running the following SQL:
-    $ sudo su - postgres
-    $ psql -c "SHOW log_line_prefix"
-    If log_line_prefix does not contain %t, this is a finding.
-    Next check the logs to verify time stamps are being logged:
-    $ sudo su - postgres
-    $ cat ${PGDATA?}/pg_log/<latest_log>
-    < 2016-02-23 12:53:33.947 EDT postgres postgres 570bd68d.3912 >LOG: connection
-    authorized: user=postgres database=postgres
-    < 2016-02-23 12:53:41.576 EDT postgres postgres 570bd68d.3912 >LOG: AUDIT:
-    SESSION,1,1,DDL,CREATE TABLE,,,CREATE TABLE test_srg(id INT);,<none>
-    < 2016-02-23 12:53:44.372 EDT postgres postgres 570bd68d.3912 >LOG:
-    disconnection: session time: 0:00:10.426 user=postgres database=postgres
-    host=[local]
-    If time stamps are not being logged, this is a finding.'
-
-    desc 'fix', %q[Note: The following instructions use the PGDATA and PGVER
-    environment variables. See supplementary content APPENDIX-F for instructions on
-    configuring PGDATA and APPENDIX-H for PGVER.
-    PostgreSQL will not log anything if logging is not enabled. To ensure that
-    logging is enabled, review supplementary content APPENDIX-C for instructions on
-    enabling logging.
-    If logging is enabled the following configurations must be made to log events
-    with time stamps:
-    First, as the database administrator (shown here as "postgres"), edit
-    postgresql.conf:
-    $ sudo su - postgres
-    $ vi ${PGDATA?}/postgresql.conf
-    Add %m to log_line_prefix to enable time stamps with milliseconds:
-    log_line_prefix = '< %t >'
-    Now, as the system administrator, reload the server with the new configuration:
-    # SYSTEMD SERVER ONLY
-    $ sudo systemctl reload postgresql-${PGVER?}
-    # INITD SERVER ONLY
-    $ sudo service postgresql-${PGVER?} reload"]
-
-    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
-
-    describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
-      its('output') { should match '%t' }
-    end
-  end
-
-  control 'SV-261871' do
-    desc 'check', 'Check PostgreSQL settings and existing audit records to verify a
-    user name associated with the event is being captured and stored with the audit
-    records. If audit records exist without specific user information, this is a
-    finding.
-    First, as the database administrator (shown here as "postgres"), verify the
-    current setting of log_line_prefix by running the following SQL:
-    $ sudo su - postgres
-    $ psql -c "SHOW log_line_prefix"
-    If log_line_prefix does not contain %t, %u, %d, %p, %r, this is a finding.'
-
-    desc 'fix', %q(Note: The following instructions use the PGDATA and PGVER
-    environment variables. See supplementary content APPENDIX-F for instructions on
-    configuring PGDATA and APPENDIX-H for PGVER.
-    Logging must be enabled in order to capture the identity of any user/subject or
-    process associated with an event. To ensure that logging is enabled, review
-    supplementary content APPENDIX-C for instructions on enabling logging.
-    To enable username, database name, process ID, remote host/port and application
-    name in logging, as the database administrator (shown here as "postgres"),
-    edit the following in postgresql.conf:
-    $ sudo su - postgres
-    $ vi ${PGDATA?}/postgresql.conf
-    log_line_prefix = '< %t %u %d %p %r >'
-    Now, as the system administrator, reload the server with the new configuration:
-    # SYSTEMD SERVER ONLY
-    $ sudo systemctl reload postgresql-${PGVER?}
-    # INITD SERVER ONLY
-    $ sudo service postgresql-${PGVER?} reload)
-
-    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
-
-    log_line_prefix_escapes = %w(%t %u %d %p %r)
-
-    log_line_prefix_escapes.each do |escape|
-      describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
-        its('output') { should include escape }
-      end
-    end
-  end
-
-  control 'SV-261965' do
-    impact 0.0
-    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
-      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
-    end
-  end
-
-  control 'SV-261966' do
-    impact 0.0
-    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
-      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
-    end
-  end
-
-  control 'SV-261898' do
-    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
-
-    pg_superusers = input('pg_superusers')
-    rds_superusers = input('rds_superusers')
-    pg_db = input('pg_db')
-
-    privileges = %w(rolcreatedb rolcreaterole rolsuper)
-
-    roles_sql = 'SELECT r.rolname FROM pg_catalog.pg_roles r;'
-    roles_query = sql.query(roles_sql, [pg_db])
-    roles = roles_query.lines
-
-    roles.each do |role|
-      next if pg_superusers.include?(role) || rds_superusers.include?(role)
-      privileges.each do |privilege|
-        privilege_sql = "SELECT r.#{privilege} FROM pg_catalog.pg_roles r "\
-          "WHERE r.rolname = '#{role}';"
-
-        describe sql.query(privilege_sql, [pg_db]) do
-          its('output') { should_not eq 't' }
-        end
-      end
-    end
-  end
-
-  control 'SV-261869' do
-    desc 'fix', "Note: The following instructions use the PGDATA and PGVER
-    environment variables. See supplementary content APPENDIX-F for instructions on
-    configuring PGDATA and APPENDIX-H for PGVER.
-    To ensure that logging is enabled, review supplementary content APPENDIX-C for
-    instructions on enabling logging.
-    If logging is enabled the following configurations can be made to log the
-    source of an event.
-    First, as the database administrator, edit postgresql.conf:
-    $ sudo su - postgres
-    $ vi ${PGDATA?}/postgresql.conf
-    ###### Log Line Prefix
-    Extra parameters can be added to the setting log_line_prefix to log source of
-    event:
-    # %u = user name
-    # %d = database name
-    # %r = remote host and port
-    # %p = process ID
-    # %t = timestamp
-    For example:
-    log_line_prefix = '< %u %d %r %p %t >'
-    ###### Log Hostname
-    By default only IP address is logged. To also log the hostname the following
-    parameter can also be set in postgresql.conf:
-    log_hostname = on
-    Now, as the system administrator, reload the server with the new configuration:
-    # SYSTEMD SERVER ONLY
-    $ sudo systemctl reload postgresql-${PGVER?}
-    # INITD SERVER ONLY
-    $ sudo service postgresql-${PGVER?} reload"
-
-    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
-
-    log_line_prefix_escapes = %w(%u %d %r %p %t)
-    log_line_prefix_escapes.each do |escape|
-      describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
-        its('output') { should include escape }
-      end
-    end
-
-    describe sql.query('SHOW log_hostname;', [input('pg_db')]) do
-      its('output') { should match /(on|true)/i }
-    end
-  end
-
-  control 'SV-261888' do
-    impact 0.0
-    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
-      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
-    end
-  end
-
-  control 'SV-261887' do
-    impact 0.0
-    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
-      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
-    end
-  end
-
-  control 'SV-261912' do
-    describe 'A manual review is required to ensure PostgreSQL associates organization-defined types of security labels
-      having organization-defined security label values with information in process' do
-      skip 'A manual review is required to ensure PostgreSQL associates organization-defined types of security labels
-      having organization-defined security label values with information in process'
-    end
-  end
-
-  control 'SV-261891' do
-    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
-
-    describe sql.query('SHOW password_encryption;', [input('pg_db')]) do
-      its('output') { should match /on|true|scram-sha-256/i }
-    end
-  end
-
-  control 'SV-261924' do
-    desc 'check', 'To list all the permissions of individual roles, as the database
-    administrator (shown here as "postgres"), run the following SQL:
-    $ psql -c "\du
-    If any role has SUPERUSER that should not, this is a finding.
-    Next, list all the permissions of databases and schemas by running the following SQL:
-    $ psql -c "\l"
-    $ psql -c "\dn+"
-    If any database or schema has update ("W") or create ("C") privileges and should
-    not, this is a finding.'
-    desc 'fix', 'Configure PostgreSQL to enforce access restrictions associated with
-    changes to the configuration of PostgreSQL or database(s).
-    Use ALTER ROLE to remove accesses from roles:
-    $ psql -c "ALTER ROLE <role_name> NOSUPERUSER"
-    Use REVOKE to remove privileges from databases and schemas:
-    $ psql -c "REVOKE ALL PRIVILEGES ON <table> FROM <role_name>;'
-
-    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
-
-    pg_superusers = input('pg_superusers')
-    authorized_owners = input('rds_superusers')
-    # authorized_owners = input('pg_superusers')
-    owners = authorized_owners.join('|')
-    pg_db = input('pg_db')
-
-    roles_sql = 'SELECT r.rolname FROM pg_catalog.pg_roles r;'
-    roles_query = sql.query(roles_sql, [pg_db])
-    roles = roles_query.lines
-
-    roles.each do |role|
-      # Only execute the code if the role being processed is NOT included in pg_superusers object
-      next if pg_superusers.include?(role)
-      superuser_sql = 'SELECT r.rolsuper FROM pg_catalog.pg_roles r '\
-        "WHERE r.rolname = '#{role}';"
-
-      describe sql.query(superuser_sql, [pg_db]) do
-        its('output') { should_not eq 't' }
-      end
-    end
-
-    # database_granted_privileges = 'CTc'
-    # database_public_privileges = 'c'
-    # database_acl = "^((((#{owners})=[#{database_granted_privileges}]+|"\
-    #  "=[#{database_public_privileges}]+)\/\\w+,?)+|)\\|"
-    database_granted_privileges = 'CTc'
-    database_public_privileges = 'Tc'
-    database_acl = "((?:=#{database_public_privileges}\/)|(?:=#{database_granted_privileges}\/)*)(#{owners})(?:,(#{owners}))*"
-    database_acl_regex = Regexp.new(database_acl)
-
-    schema_granted_privileges = 'UC'
-    schema_public_privileges = 'U'
-    # schema_acl = "^((((#{owners})=[#{schema_granted_privileges}]+|"\
-    #  "=[#{schema_public_privileges}]+)\/\\w+,?)+|)\\|"
-    schema_acl = "(?:(#{owners})*)((?:=#{schema_granted_privileges}\/)|(?:=#{schema_public_privileges}\/))*(\s?|\w+)?"
-    schema_acl_regex = Regexp.new(schema_acl)
-
-    databases_sql = 'SELECT datname FROM pg_catalog.pg_database where not datistemplate AND datname != \'rdsadmin\';'
-    databases_query = sql.query(databases_sql, [pg_db])
-    databases = databases_query.lines
-
-    databases.each do |database|
-      datacl_sql = "SELECT pg_catalog.array_to_string(datacl, E','), datname "\
-        "FROM pg_catalog.pg_database WHERE datname = '#{database}';"
-
-      describe sql.query(datacl_sql, [pg_db]) do
-        its('output') { should match database_acl_regex }
-      end
-
-      schemas_sql = 'SELECT n.nspname FROM pg_catalog.pg_namespace n '\
-        "WHERE n.nspname !~ '^pg_' AND n.nspname <> 'information_schema';"
-      schemas_query = sql.query(schemas_sql, [database])
-      # Handle connection disabled on database (only process user defined dbs)
-      next unless schemas_query.methods.include?(:output)
-      schemas = schemas_query.lines
-
-      schemas.each do |schema|
-        nspacl_sql = "SELECT pg_catalog.array_to_string(n.nspacl, E','), "\
-          'n.nspname FROM pg_catalog.pg_namespace n '\
-          "WHERE n.nspname = '#{schema}';"
-        # If the db name is not specified it defaults to the user name executing the query
-        describe sql.query(nspacl_sql [database]) do
-          its('output') { should match schema_acl_regex }
         end
       end
     end
@@ -1172,11 +121,13 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
     sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
 
+    # Check log_line_prefix for required escapes (see ESCAPE_LOOKUP hash in the helper_methods.rb file)
     log_line_prefix_escapes = %w(%t %u %d %p %r)
-
     log_line_prefix_escapes.each do |escape|
       describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
-        its('output') { should include escape }
+        it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
+          expect(subject.output).to include(escape)
+        end
       end
     end
 
@@ -1185,26 +136,33 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'SV-261919' do
-    describe "A manual review is required to ensure the system provides a warning to appropriate support staff when
-      allocated audit record storage volume reaches 75% of maximum audit record storage capacity" do
-      skip "A manual review is required to ensure the system provides a warning to appropriate support staff when
-      allocated audit record storage volume reaches 75% of maximum audit record storage capacity"
+  control 'SV-261862' do
+    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
+
+    roles_sql = 'SELECT r.rolname FROM pg_catalog.pg_roles r;'
+    roles_query = sql.query(roles_sql, [input('pg_db')])
+    roles = roles_query.lines
+
+    roles.each do |role|
+      next if input('pg_superusers').include?(role)
+      superuser_sql = 'SELECT r.rolsuper FROM pg_catalog.pg_roles r '\
+        "WHERE r.rolname = '#{role}';"
+
+      describe sql.query(superuser_sql, [input('pg_db')]) do
+        its('output') { should_not eq 't' }
+      end
     end
   end
 
-  control 'SV-261927' do
-    describe "A manual review is required to ensure PostgreSQL requires users to reauthenticate when organization-defined
-      circumstances or situations require reauthentication" do
-      skip "A manual review is required to ensure PostgreSQL requires users to reauthenticate when organization-defined
-      circumstances or situations require reauthentication"
+  control 'SV-261863' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
-  control 'SV-261894' do
-    impact 0.0
-    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
-      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
+  control 'SV-261864' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
     end
   end
 
@@ -1266,25 +224,26 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
     sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
 
-    log_line_prefix_escapes = %w(%t %u %d %p)
+    # Check log_line_prefix for required escapes (see ESCAPE_LOOKUP hash in the helper_methods.rb file)
+    log_line_prefix_escapes = %w(%u %d %r %p %t)
     log_line_prefix_escapes.each do |escape|
       describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
-        its('output') { should include escape }
+        it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
+          expect(subject.output).to include(escape)
+        end
       end
     end
 
-    describe sql.query('SHOW log_connections;', [input('pg_db')]) do
-      its('output') { should_not match /off|false/i }
-    end
+    describe 'PostgreSQL logging settings' do
+      it 'log_connections should not be off or false' do
+        result = sql.query('SHOW log_connections;', [input('pg_db')])
+        expect(result.output).not_to match(/off|false/i)
+      end
 
-    describe sql.query('SHOW log_disconnections;', [input('pg_db')]) do
-      its('output') { should_not match /off|false/i }
-    end
-  end
-
-  control 'SV-261878' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
+      it 'log_disconnections should not be off or false' do
+        result = sql.query('SHOW log_disconnections;', [input('pg_db')])
+        expect(result.output).not_to match(/off|false/i)
+      end
     end
   end
 
@@ -1313,8 +272,191 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
     log_line_prefix_escapes.each do |escape|
       describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
-        its('output') { should include escape }
+        it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
+          expect(subject.output).to include(escape)
+        end
       end
+    end
+  end
+
+  control 'SV-261868' do
+    desc 'check', 'First, as the database administrator (shown here as "postgres"), check the
+    current log_line_prefix setting by running the following SQL:
+    $ psql -c "SHOW log_line_prefix"
+    If log_line_prefix does not contain %t %u %d, this is a finding.'
+
+    desc 'fix', "Note: The following instructions use the PGDATA environment
+    variable. See supplementary content APPENDIX-F for instructions on configuring
+    PGDATA.
+    To check that logging is enabled, review supplementary content APPENDIX-C for
+    instructions on enabling logging.
+    Extra parameters can be added to the setting log_line_prefix to log application
+    related information:
+    # %a = application name
+    # %u = user name
+    # %d = database name
+    # %r = remote host and port
+    # %p = process ID
+    # %m = timestamp with milliseconds
+    # %t = timestamp without milliseconds
+    # %i = command tag
+    # %s = session startup
+    # %e = SQL state
+    For example:
+    log_line_prefix = '< %t %a %u %d %r %p %i %e %s>’
+    Now, as the system administrator, reload the server with the new configuration"
+
+    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
+
+    log_line_prefix_escapes = %w(%t %u %d)
+
+    log_line_prefix_escapes.each do |escape|
+      describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
+        it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
+          expect(subject.output).to include(escape)
+        end
+      end
+    end
+  end
+
+  control 'SV-261869' do
+    desc 'fix', "Note: The following instructions use the PGDATA and PGVER
+    environment variables. See supplementary content APPENDIX-F for instructions on
+    configuring PGDATA and APPENDIX-H for PGVER.
+    To ensure that logging is enabled, review supplementary content APPENDIX-C for
+    instructions on enabling logging.
+    If logging is enabled the following configurations can be made to log the
+    source of an event.
+    First, as the database administrator, edit postgresql.conf:
+    $ sudo su - postgres
+    $ vi ${PGDATA?}/postgresql.conf
+    ###### Log Line Prefix
+    Extra parameters can be added to the setting log_line_prefix to log source of
+    event:
+    # %u = user name
+    # %d = database name
+    # %r = remote host and port
+    # %p = process ID
+    # %t = timestamp
+    For example:
+    log_line_prefix = '< %u %d %r %p %t >'
+    ###### Log Hostname
+    By default only IP address is logged. To also log the hostname the following
+    parameter can also be set in postgresql.conf:
+    log_hostname = on
+    Now, as the system administrator, reload the server with the new configuration:
+    # SYSTEMD SERVER ONLY
+    $ sudo systemctl reload postgresql-${PGVER?}
+    # INITD SERVER ONLY
+    $ sudo service postgresql-${PGVER?} reload"
+
+    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
+
+    log_line_prefix_escapes = %w(%u %d %r %p %t)
+    log_line_prefix_escapes.each do |escape|
+      describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
+        it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
+          expect(subject.output).to include(escape)
+        end
+      end
+    end
+
+    describe 'PostgreSQL logging settings' do
+      it 'should have log hostname enabled' do 
+        expect(
+          sql.query('SHOW log_hostname;', [input('pg_db')]).output.strip.downcase
+        ).to match(/^(on|true)$/)
+      end
+    end
+
+  end
+
+  control 'SV-261870' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261871' do
+    desc 'check', 'Check PostgreSQL settings and existing audit records to verify a
+    user name associated with the event is being captured and stored with the audit
+    records. If audit records exist without specific user information, this is a
+    finding.
+    First, as the database administrator (shown here as "postgres"), verify the
+    current setting of log_line_prefix by running the following SQL:
+    $ sudo su - postgres
+    $ psql -c "SHOW log_line_prefix"
+    If log_line_prefix does not contain %t, %u, %d, %p, %r, this is a finding.'
+
+    desc 'fix', %q(Note: The following instructions use the PGDATA and PGVER
+    environment variables. See supplementary content APPENDIX-F for instructions on
+    configuring PGDATA and APPENDIX-H for PGVER.
+    Logging must be enabled in order to capture the identity of any user/subject or
+    process associated with an event. To ensure that logging is enabled, review
+    supplementary content APPENDIX-C for instructions on enabling logging.
+    To enable username, database name, process ID, remote host/port and application
+    name in logging, as the database administrator (shown here as "postgres"),
+    edit the following in postgresql.conf:
+    $ sudo su - postgres
+    $ vi ${PGDATA?}/postgresql.conf
+    log_line_prefix = '< %t %u %d %p %r >'
+    Now, as the system administrator, reload the server with the new configuration:
+    # SYSTEMD SERVER ONLY
+    $ sudo systemctl reload postgresql-${PGVER?}
+    # INITD SERVER ONLY
+    $ sudo service postgresql-${PGVER?} reload)
+
+    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
+
+    log_line_prefix_escapes = %w(%t %u %d %p %r)
+
+    log_line_prefix_escapes.each do |escape|
+      describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
+        it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
+          expect(subject.output).to include(escape)
+        end
+      end
+    end
+  end
+
+  control 'SV-261872' do
+    describe 'A manual review is required to ensure PostgreSQL includes additional, more detailed, organization-defined
+      information in the audit records for audit events identified by type,
+      location, or subject' do
+      skip 'A manual review is required to ensure PostgreSQL includes additional, more detailed, organization-defined
+      information in the audit records for audit events identified by type,
+      location, or subject'
+    end
+  end
+
+  control 'SV-261875' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261876' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end  
+
+  control 'SV-261877' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261878' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261879' do
+    impact 0.0
+    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
+      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
     end
   end
 
@@ -1325,9 +467,206 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'SV-261967' do
-    describe 'Requires manual review of the RDS audit log system.' do
-      skip 'Requires manual review of the RDS audit log system.'
+  control 'SV-261881' do
+    impact 0.0
+    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
+      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
+    end
+  end
+
+  control 'SV-261882' do
+    impact 0.0
+    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
+      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
+    end
+  end
+
+  control 'SV-261883' do
+    impact 0.0
+    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
+      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
+    end
+  end
+
+  control 'SV-261884' do
+    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
+    authorized_owners = input('rds_superusers')
+    pg_owner = input('pg_owner')
+    pg_db = input('pg_db')
+
+    databases_sql = "SELECT datname FROM pg_catalog.pg_database where datname = '#{pg_db}';"
+    databases_query = sql.query(databases_sql, [input('pg_db')])
+    databases = databases_query.lines
+    types = %w(t s v) # tables, sequences views
+
+    databases.each do |database|
+      schemas_sql = ''
+      functions_sql = ''
+
+      if database == 'postgres'
+        schemas_sql = 'SELECT n.nspname, pg_catalog.pg_get_userbyid(n.nspowner) '\
+          'FROM pg_catalog.pg_namespace n '\
+          "WHERE pg_catalog.pg_get_userbyid(n.nspowner) <> '#{pg_owner}' AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin';"
+        functions_sql = 'SELECT n.nspname, p.proname, '\
+          'pg_catalog.pg_get_userbyid(n.nspowner) '\
+          'FROM pg_catalog.pg_proc p '\
+          'LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace '\
+          "WHERE pg_catalog.pg_get_userbyid(n.nspowner) <> '#{pg_owner}' AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin';"
+      else
+        schemas_sql = 'SELECT n.nspname, pg_catalog.pg_get_userbyid(n.nspowner) '\
+          'FROM pg_catalog.pg_namespace n '\
+          'WHERE pg_catalog.pg_get_userbyid(n.nspowner) '\
+          "NOT IN (#{authorized_owners.map { |e| "'#{e}'" }.join(',')}) AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin' "\
+          "AND n.nspname !~ '^pg_' AND n.nspname <> 'information_schema';"
+        functions_sql = 'SELECT n.nspname, p.proname, '\
+          'pg_catalog.pg_get_userbyid(n.nspowner) '\
+          'FROM pg_catalog.pg_proc p '\
+          'LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace '\
+          'WHERE pg_catalog.pg_get_userbyid(n.nspowner) '\
+          "NOT IN (#{authorized_owners.map { |e| "'#{e}'" }.join(',')}) AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin' "\
+          "AND n.nspname <> 'pg_catalog' AND n.nspname <> 'information_schema';"
+      end
+
+      connection_error = "FATAL:\\s+database \"#{database}\" is not currently "\
+        'accepting connections'
+      connection_error_regex = Regexp.new(connection_error)
+
+      # Test the schema query resultes
+      describe "SQL query result for database '#{database}'" do
+        sql_result = sql.query(schemas_sql, [database])
+        
+        it "should not return any 'schemas' owned by unauthorized users." do
+          expect(sql_result.lines.map(&:strip)).to be_empty.or match(connection_error_regex)
+        end
+      end
+      
+      # Test the functions query results
+      describe "SQL query result for database '#{database}'" do
+        sql_result = sql.query(functions_sql, [database])
+        
+        it "should not return any 'functions' owned by unauthorized users." do
+          expect(sql_result.lines.map(&:strip)).to be_empty.or match(connection_error_regex)
+        end
+      end
+    
+      types.each do |type|
+        objects_sql = ''
+
+        if database == 'postgres'
+          objects_sql = 'SELECT n.nspname, c.relname, c.relkind, '\
+            'pg_catalog.pg_get_userbyid(n.nspowner) FROM pg_catalog.pg_class c '\
+            'LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace '\
+            "WHERE c.relkind IN ('#{type}','s','') "\
+            "AND pg_catalog.pg_get_userbyid(n.nspowner) <> '#{pg_owner}' AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin' "
+          "AND n.nspname !~ '^pg_toast';"
+        else
+          objects_sql = 'SELECT n.nspname, c.relname, c.relkind, '\
+            'pg_catalog.pg_get_userbyid(n.nspowner) FROM pg_catalog.pg_class c '\
+            'LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace '\
+            "WHERE c.relkind IN ('#{type}','s','') "\
+            'AND pg_catalog.pg_get_userbyid(n.nspowner) '\
+            "NOT IN (#{authorized_owners.map { |e| "'#{e}'" }.join(',')}) AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin' "\
+            "AND n.nspname <> 'pg_catalog' AND n.nspname <> 'information_schema'"\
+            " AND n.nspname !~ '^pg_toast';"
+        end
+
+        describe "SQL query result for database '#{database}' and relation '#{CustomHelper::TableTypes.from_short(type)}'" do
+          sql_result = sql.query(objects_sql, [database])
+          
+          it "should not return any 'objects' owned by unauthorized users." do
+            expect(sql_result.lines.map(&:strip)).to be_empty.or match(connection_error_regex)
+          end
+        end
+      end
+    end
+  end
+
+  control 'SV-261885' do
+    if !input('windows_runner')
+      sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
+      authorized_owners = input('pg_superusers')
+      supperusers = authorized_owners.join('|')
+      authorized_owners = input('pg_system_resource_users')
+      owners = authorized_owners.join('|')
+
+      object_granted_privileges = 'arwdDxtU'
+      object_public_privileges = 'r'
+      # Regex to match the pg_class table ACLs
+      # It allows pg_catalog and information_schema to have read and view privileges
+      # It allows the owner to have all privileges
+      # It allows the public to have read privileges
+      object_acl = "^((((#{owners})=[#{object_granted_privileges}]+|"\
+        "=[#{object_public_privileges}]+)\/\\w+,?)+|)\\|"
+      object_acl_regex = Regexp.new(object_acl)
+
+      # Regex to match the pg_settings table ACLs
+      # It allows superusers and system resource users to have all privileges
+      # It allows public to have read and write privileges
+      # It allows pg_catalog and information_schema to have read and view privileges
+      pg_settings_acl = "^((((#{supperusers})=[#{object_granted_privileges}]+|"\
+        "=(#{object_public_privileges}|rw))\/\\w+,?)+)|pg_catelog\|\w+\|(r|v)"
+      pg_settings_acl_regex = Regexp.new(pg_settings_acl)
+
+      tested = []
+      objects_sql = 'SELECT n.nspname, c.relname, c.relkind '\
+        'FROM pg_catalog.pg_class c '\
+        'LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace '\
+        "WHERE c.relkind IN ('r', 'v', 'm', 'S', 'f');"
+
+      databases_sql = 'SELECT datname FROM pg_catalog.pg_database where not datistemplate AND datname != \'rdsadmin\';'
+      databases_query = sql.query(databases_sql, [input('pg_db')])
+      databases = databases_query.lines
+
+      databases.each do |database|
+        rows = sql.query(objects_sql, [database])
+        next unless rows.methods.include?(:output) # Handle connection disabled on database
+        objects = rows.lines
+
+        objects.each do |obj|
+          next if tested.include?(obj)
+          schema, object, type = obj.split('|')
+          relacl_sql = "SELECT pg_catalog.array_to_string(c.relacl, E','), "\
+            'n.nspname, c.relname, c.relkind FROM pg_catalog.pg_class c '\
+            'LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace '\
+            "WHERE n.nspname = '#{schema}' AND c.relname = '#{object}' "\
+            "AND c.relkind = '#{type}';"
+
+          sql_result = sql.query(relacl_sql, [database])
+
+          describe "SQL query result for database '#{database}', schema '#{schema}', object '#{object}' and relation type '#{CustomHelper::TableTypes.from_short(type)}'" do
+            it 'should not be owned by unauthorized users.' do
+              expect(sql_result.output).to match(object_acl_regex).or match(pg_settings_acl_regex)
+            end
+          end
+          tested.push(obj)
+        end
+      end
+    else
+      describe 'This must be manually reviewed at this time' do
+        skip 'This must be manually reveiwed at this time'
+      end
+    end
+  end
+
+  control 'SV-261887' do
+    impact 0.0
+    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
+      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
+    end
+  end
+
+  control 'SV-261888' do
+    impact 0.0
+    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
+      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
+    end
+  end
+
+  control 'SV-261889' do
+    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
+
+    describe sql.query('SHOW port;', [input('pg_db')]) do
+      its('output') { should eq input('pg_port') }
     end
   end
 
@@ -1361,11 +700,28 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'SV-261910' do
-    describe 'A manual review is required to ensure PostgreSQ automatically terminates a user session after
-      organization-defined conditions or trigger events requiring session disconnect' do
-      skip 'A manual review is required to ensure PostgreSQ automatically terminates a user session after
-      organization-defined conditions or trigger events requiring session disconnect'
+  control 'SV-261891' do
+    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
+
+    describe 'SHOW password_encryption setting' do
+      it 'should be enabled and set to on, true, or scram-sha-256' do
+        result = sql.query('SHOW password_encryption;', [input('pg_db')])
+        expect(result.output).to match(/on|true|scram-sha-256/i)
+      end
+    end 
+  end
+
+  control 'SV-261893' do
+    impact 0.0
+    describe 'This control is not applicable on postgres within aws rds, as aws manages this capability' do
+      skip 'This control is not applicable on postgres within aws rds, as aws manages this capability'
+    end
+  end
+
+  control 'SV-261894' do
+    impact 0.0
+    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
+      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
     end
   end
 
@@ -1374,6 +730,89 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
       account' do
       skip 'A manual review is required to ensure PostgreSQL maps the PKI-authenticated identity to an associated user
       account'
+    end
+  end
+
+  control 'SV-261896' do
+    impact 0.0
+    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
+      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
+    end
+  end
+
+  control 'SV-261898' do
+    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
+
+    pg_superusers = input('pg_superusers')
+    rds_superusers = input('rds_superusers')
+    pg_db = input('pg_db')
+
+    privileges = %w(rolcreatedb rolcreaterole rolsuper)
+
+    roles_sql = 'SELECT r.rolname FROM pg_catalog.pg_roles r;'
+    roles_query = sql.query(roles_sql, [pg_db])
+    roles = roles_query.lines
+
+    roles.each do |role|
+      next if pg_superusers.include?(role) || rds_superusers.include?(role)
+      privileges.each do |privilege|
+        privilege_sql = "SELECT r.#{privilege} FROM pg_catalog.pg_roles r "\
+          "WHERE r.rolname = '#{role}';"
+
+        describe sql.query(privilege_sql, [pg_db]) do
+          its('output') { should_not eq 't' }
+        end
+      end
+    end
+  end
+
+  control 'SV-261902' do
+    pg_owner = input('pg_owner')
+    pg_dba = input('pg_dba')
+    pg_dba_password = input('pg_dba_password')
+    pg_db = input('pg_db')
+    pg_host = input('pg_host')
+    pg_object_granted_privileges = input('pg_object_granted_privileges')
+    pg_object_public_privileges = input('pg_object_public_privileges')
+    pg_object_exceptions = input('pg_object_exceptions')
+    exceptions = "#{pg_object_exceptions.map { |e| "'#{e}'" }.join(',')}"
+
+    # Regex to match the pg_class table ACLs
+    # It allows pg_catalog and information_schema to have read and view privileges
+    # It allows the public to have read privileges
+    # It allows rdsadmin to have all privileges
+    # It allows the pg_owner to have all privileges
+    # It allows the pg_object_granted_privileges to have all privileges
+    # It allows the pg_object_public_privileges to have read privileges
+    # It allows the pg_object_exceptions to have all privileges
+    object_acl = "^(((#{pg_owner}|rdsadmin=[#{pg_object_granted_privileges}]+|"\
+      "=[#{pg_object_public_privileges}]+)\\/\\w+,?)+|)$"
+    schemas = ['pg_catalog', 'information_schema']
+    sql = postgres_session(pg_dba, pg_dba_password, pg_host, input('pg_port'))
+
+    schemas.each do |schema|
+      objects_sql = 'SELECT n.nspname, c.relname, c.relkind, '\
+        "pg_catalog.array_to_string(c.relacl, E',') FROM pg_catalog.pg_class c "\
+        'LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace '\
+        "WHERE c.relkind IN ('r', 'v', 'm', 'S', 'f') "\
+        "AND n.nspname ~ '^(#{schema})$' "\
+        "AND pg_catalog.array_to_string(c.relacl, E',') !~ '#{object_acl}' "\
+        "AND c.relname NOT IN (#{exceptions});"
+
+      describe sql.query(objects_sql, [pg_db]) do
+        its('output') { should eq '' }
+      end
+
+      functions_sql = 'SELECT n.nspname, p.proname, '\
+        'pg_catalog.pg_get_userbyid(n.nspowner) '\
+        'FROM pg_catalog.pg_proc p '\
+        'LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace '\
+        "WHERE n.nspname ~ '^(#{schema})$' "\
+        "AND pg_catalog.pg_get_userbyid(n.nspowner) <> '#{pg_owner}' AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin';"
+
+      describe sql.query(functions_sql, [pg_db]) do
+        its('output') { should eq '' }
+      end
     end
   end
 
@@ -1392,17 +831,570 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'SV-261879' do
+  control 'SV-261905' do
+    describe 'A manual review is required to ensure PostgreSQL checks the validity of all data inputs except those
+    specifically identified by the organization' do
+      skip 'A manual review is required to ensure PostgreSQL checks the validity of all data inputs except those
+    specifically identified by the organization'
+    end
+  end
+
+  control 'SV-261906' do
+    describe 'A manual review is require to ensure PostgreSQL and associated applications reserve the use of dynamic
+    code execution for situations that require it.' do
+      skip 'A manual review is require to ensure PostgreSQL and associated applications reserve the use of dynamic
+    code execution for situations that require it.'
+    end
+  end
+
+  control 'SV-261907' do
+    describe 'PostgreSQL and associated applications, when making use of dynamic code
+    execution, must scan input data for invalid values that may indicate a code injection attack' do
+      skip 'PostgreSQL and associated applications, when making use of dynamic code
+    execution, must scan input data for invalid values that may indicate a code injection attack'
+    end
+  end
+
+  control 'SV-261908' do
+    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
+
+    describe 'Show client_min_messages setting' do
+      it 'should be set to error.' do
+        result = sql.query('SHOW client_min_messages;', [input('pg_db')])
+        expect(result.output).to match(/^error$/i)
+      end
+    end
+  end
+
+  control 'SV-261909' do
+    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
+    
+    describe sql.query('SHOW client_min_messages;',  [input('pg_db')]) do
+      its('output') { should match (/^error$/i) }
+    end
+
+    describe "Log File permissions are not applicable to AWS RDS" do
+      skip "Log File permissions are not applicable to AWS RDS"
+
+    end
+  end
+
+  control 'SV-261910' do
+    describe 'A manual review is required to ensure PostgreSQ automatically terminates a user session after
+      organization-defined conditions or trigger events requiring session disconnect' do
+      skip 'A manual review is required to ensure PostgreSQ automatically terminates a user session after
+      organization-defined conditions or trigger events requiring session disconnect'
+    end
+  end
+
+  control 'SV-261911' do 
+    describe 'A manual review is required to ensure PostgreSQL associates organization-defined types of security labels
+    having organization-defined security label values with information in storage' do
+      skip 'A manual review is required to ensure PostgreSQL associates organization-defined types of security labels
+    having organization-defined security label values with information in storage'
+    end
+  end
+
+  control 'SV-261912' do
+    describe 'A manual review is required to ensure PostgreSQL associates organization-defined types of security labels
+      having organization-defined security label values with information in process' do
+      skip 'A manual review is required to ensure PostgreSQL associates organization-defined types of security labels
+      having organization-defined security label values with information in process'
+    end
+  end
+
+  control 'SV-261913' do
+    describe 'A manual review is required to ensure PostgreSQL associates organization-defined types of security labels
+    having organization-defined security label values with information in transmission' do
+      skip 'A manual review is required to ensure PostgreSQL associates organization-defined types of security labels
+      having organization-defined security label values with information in transmission'
+    end
+  end
+
+  control 'SV-261914' do
+    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
+
+    authorized_owners = input('rds_superusers')
+    pg_db = input('pg_db')
+    pg_owner = input('pg_owner')
+
+    databases_sql = "SELECT datname FROM pg_catalog.pg_database where datname = '#{pg_db}';"
+    databases_query = sql.query(databases_sql, [pg_db])
+    databases = databases_query.lines
+    types = %w(t s v) # tables, sequences views
+
+    databases.each do |database|
+      schemas_sql = ''
+      functions_sql = ''
+
+      if database == 'postgres'
+        schemas_sql = 'SELECT n.nspname, pg_catalog.pg_get_userbyid(n.nspowner) '\
+          'FROM pg_catalog.pg_namespace n '\
+          "WHERE pg_catalog.pg_get_userbyid(n.nspowner) <> '#{pg_owner}' AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin';"
+        functions_sql = 'SELECT n.nspname, p.proname, '\
+          'pg_catalog.pg_get_userbyid(n.nspowner) '\
+          'FROM pg_catalog.pg_proc p '\
+          'LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace '\
+          "WHERE pg_catalog.pg_get_userbyid(n.nspowner) <> '#{pg_owner}' AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin';"
+      else
+        schemas_sql = 'SELECT n.nspname, pg_catalog.pg_get_userbyid(n.nspowner) '\
+          'FROM pg_catalog.pg_namespace n '\
+          'WHERE pg_catalog.pg_get_userbyid(n.nspowner) '\
+          "NOT IN (#{authorized_owners.map { |e| "'#{e}'" }.join(',')}) AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin' "\
+          "AND n.nspname !~ '^pg_' AND n.nspname <> 'information_schema';"
+        functions_sql = 'SELECT n.nspname, p.proname, '\
+          'pg_catalog.pg_get_userbyid(n.nspowner) '\
+          'FROM pg_catalog.pg_proc p '\
+          'LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace '\
+          'WHERE pg_catalog.pg_get_userbyid(n.nspowner) '\
+          "NOT IN (#{authorized_owners.map { |e| "'#{e}'" }.join(',')}) AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin' "\
+          "AND n.nspname <> 'pg_catalog' AND n.nspname <> 'information_schema';"
+      end
+
+      connection_error = "FATAL:\\s+database \"#{database}\" is not currently "\
+        'accepting connections'
+      connection_error_regex = Regexp.new(connection_error)
+
+      describe "Discretionary Access Control (DAC) for database '#{database}' schemas" do
+        sql_result = sql.query(schemas_sql, [database])
+
+        it 'should only be granted to legitimate users (owners).' do
+           expect(sql_result.output).to eq('') | match(connection_error_regex)
+        end
+      end
+
+      describe "Discretionary Access Control (DAC) for database '#{database}' functions" do
+        sql_result = sql.query(functions_sql, [database])
+      
+        it 'should only be granted to legitimate users (owners).' do
+          expect(sql_result.output).to eq('') | match(connection_error_regex)
+        end
+      end
+
+      types.each do |type|
+        objects_sql = if database == 'postgres'
+                        'SELECT n.nspname, c.relname, c.relkind, '\
+                          'pg_catalog.pg_get_userbyid(n.nspowner) FROM pg_catalog.pg_class c '\
+                          'LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace '\
+                          "WHERE c.relkind IN ('#{type}','s','') "\
+                          "AND pg_catalog.pg_get_userbyid(n.nspowner) <> '#{pg_owner}' AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin' "\
+                          " AND n.nspname !~ '^pg_toast';"
+                      else
+                        'SELECT n.nspname, c.relname, c.relkind, '\
+                          'pg_catalog.pg_get_userbyid(n.nspowner) FROM pg_catalog.pg_class c '\
+                          'LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace '\
+                          "WHERE c.relkind IN ('#{type}','s','') "\
+                          'AND pg_catalog.pg_get_userbyid(n.nspowner) '\
+                          "NOT IN (#{authorized_owners.map { |e| "'#{e}'" }.join(',')}) AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin' "\
+                          "AND n.nspname <> 'pg_catalog' AND n.nspname <> 'information_schema'"\
+                          " AND n.nspname !~ '^pg_toast';"
+                      end
+
+        describe "Discretionary Access Control (DAC) for database '#{database}' and relation type '#{CustomHelper::TableTypes.from_short(type)}'" do
+          sql_result = sql.query(objects_sql, [database])
+        
+          it 'should only be granted to legitimate users (owners).' do
+            expect(sql_result.output).to eq('') | match(connection_error_regex)
+          end
+        end
+      
+      end
+    end
+  end
+
+  control 'SV-261917' do
+    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
+    describe 'This control is partially not applicable on postgres 16 within aws rds and that portion has been removed, as aws manages the operating system on which the postgres database is running' do
+      skip "This control is partially not applicable on postgres 16 within aws rds and that portion has been removed, as aws manages the operating system on which the postgres database is running"
+    end
+
+    describe sql.query('SHOW syslog_facility;', [input('pg_db')]) do
+      its('output') { should cmp 'LOCAL0' }    
+    end
+  end
+
+  control 'SV-261918' do
+    describe 'A manual review is required to ensure PostgreSQL allocates audit record storage capacity in accordance
+    with organization-defined audit record storage requirements' do
+      skip 'A manual review is required to ensure PostgreSQL allocates audit record storage capacity in accordance
+    with organization-defined audit record storage requirements'
+    end
+  end
+
+  control 'SV-261919' do
+    describe "A manual review is required to ensure the system provides a warning to appropriate support staff when
+      allocated audit record storage volume reaches 75% of maximum audit record storage capacity" do
+      skip "A manual review is required to ensure the system provides a warning to appropriate support staff when
+      allocated audit record storage volume reaches 75% of maximum audit record storage capacity"
+    end
+  end
+
+  control 'SV-261920' do
+    describe 'A manual review is required to ensure PostgreSQL provides an immediate real-time alert to appropriate
+      support staff of all audit failure events requiring real-time alerts' do
+      skip 'A manual review is required to ensure PostgreSQL provides an immediate real-time alert to appropriate
+      support staff of all audit failure events requiring real-time alerts'
+    end
+  end
+
+control 'SV-261922' do
+    desc 'check', 'Note: The following instructions use the PGDATA environment
+    variable. See supplementary content APPENDIX-F for instructions on configuring
+    PGDATA.
+    First, as the database administrator (shown here as "postgres"), verify the
+    current log_line_prefix setting by running the following SQL:
+    $ sudo su - postgres
+    $ psql -c "SHOW log_line_prefix"
+    If log_line_prefix does not contain %t, this is a finding.
+    Next check the logs to verify time stamps are being logged:
+    $ sudo su - postgres
+    $ cat ${PGDATA?}/pg_log/<latest_log>
+    < 2016-02-23 12:53:33.947 EDT postgres postgres 570bd68d.3912 >LOG: connection
+    authorized: user=postgres database=postgres
+    < 2016-02-23 12:53:41.576 EDT postgres postgres 570bd68d.3912 >LOG: AUDIT:
+    SESSION,1,1,DDL,CREATE TABLE,,,CREATE TABLE test_srg(id INT);,<none>
+    < 2016-02-23 12:53:44.372 EDT postgres postgres 570bd68d.3912 >LOG:
+    disconnection: session time: 0:00:10.426 user=postgres database=postgres
+    host=[local]
+    If time stamps are not being logged, this is a finding.'
+
+    desc 'fix', %q[Note: The following instructions use the PGDATA and PGVER
+    environment variables. See supplementary content APPENDIX-F for instructions on
+    configuring PGDATA and APPENDIX-H for PGVER.
+    PostgreSQL will not log anything if logging is not enabled. To ensure that
+    logging is enabled, review supplementary content APPENDIX-C for instructions on
+    enabling logging.
+    If logging is enabled the following configurations must be made to log events
+    with time stamps:
+    First, as the database administrator (shown here as "postgres"), edit
+    postgresql.conf:
+    $ sudo su - postgres
+    $ vi ${PGDATA?}/postgresql.conf
+    Add %m to log_line_prefix to enable time stamps with milliseconds:
+    log_line_prefix = '< %t >'
+    Now, as the system administrator, reload the server with the new configuration:
+    # SYSTEMD SERVER ONLY
+    $ sudo systemctl reload postgresql-${PGVER?}
+    # INITD SERVER ONLY
+    $ sudo service postgresql-${PGVER?} reload"]
+
+    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
+
+    describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
+      its('output') { should match '%t' }
+    end
+  end
+
+  control 'SV-261924' do
+    desc 'check', 'To list all the permissions of individual roles, as the database
+    administrator (shown here as "postgres"), run the following SQL:
+    $ psql -c "\du
+    If any role has SUPERUSER that should not, this is a finding.
+    Next, list all the permissions of databases and schemas by running the following SQL:
+    $ psql -c "\l"
+    $ psql -c "\dn+"
+    If any database or schema has update ("W") or create ("C") privileges and should
+    not, this is a finding.'
+    desc 'fix', 'Configure PostgreSQL to enforce access restrictions associated with
+    changes to the configuration of PostgreSQL or database(s).
+    Use ALTER ROLE to remove accesses from roles:
+    $ psql -c "ALTER ROLE <role_name> NOSUPERUSER"
+    Use REVOKE to remove privileges from databases and schemas:
+    $ psql -c "REVOKE ALL PRIVILEGES ON <table> FROM <role_name>;'
+
+    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
+
+    pg_superusers = input('pg_superusers')
+    authorized_owners = input('rds_superusers')
+    owners = authorized_owners.join('|')
+    pg_db = input('pg_db')
+
+    roles_sql = 'SELECT r.rolname FROM pg_catalog.pg_roles r;'
+    roles_query = sql.query(roles_sql, [pg_db])
+    roles = roles_query.lines
+
+    roles.each do |role|
+      # Only execute the code if the role being processed is NOT included in pg_superusers object
+      next if pg_superusers.include?(role)
+      superuser_sql = 'SELECT r.rolsuper FROM pg_catalog.pg_roles r '\
+        "WHERE r.rolname = '#{role}';"
+
+      describe sql.query(superuser_sql, [pg_db]) do
+        its('output') { should_not eq 't' }
+      end
+    end
+
+
+    database_granted_privileges = 'CTc'
+    database_public_privileges = 'Tc'
+
+    # Regex to match the pg_database table ACLs
+    # It allows pg_catalog and information_schema to have read and view privileges
+    # It allows the owner to have all privileges
+    # It allows the public to have read privileges
+    # It allows the granted privileges to have create and temporary privileges
+    database_acl = "((?:=#{database_public_privileges}\/)|(?:=#{database_granted_privileges}\/)*)(#{owners})(?:,(#{owners}))*"
+    database_acl_regex = Regexp.new(database_acl)
+
+    schema_granted_privileges = 'UC'
+    schema_public_privileges = 'U'
+
+    # Regex to match the pg_namespace table ACLs
+    # It allows pg_catalog and information_schema to have read and view privileges
+    # It allows the owner to have all privileges
+    # It allows the public to have update privileges
+    # It allows the granted privileges to have create privileges
+    schema_acl = "(?:(#{owners})*)((?:=#{schema_granted_privileges}\/)|(?:=#{schema_public_privileges}\/))*(\s?|\w+)?"
+    schema_acl_regex = Regexp.new(schema_acl)
+
+    databases_sql = 'SELECT datname FROM pg_catalog.pg_database where not datistemplate AND datname != \'rdsadmin\';'
+    databases_query = sql.query(databases_sql, [pg_db])
+    databases = databases_query.lines
+
+    databases.each do |database|
+      datacl_sql = "SELECT pg_catalog.array_to_string(datacl, E','), datname "\
+        "FROM pg_catalog.pg_database WHERE datname = '#{database}';"
+
+      describe sql.query(datacl_sql, [pg_db]) do
+        its('output') { should match database_acl_regex }
+      end
+
+      schemas_sql = 'SELECT n.nspname FROM pg_catalog.pg_namespace n '\
+        "WHERE n.nspname !~ '^pg_' AND n.nspname <> 'information_schema';"
+      schemas_query = sql.query(schemas_sql, [database])
+      # Handle connection disabled on database (only process user defined dbs)
+      next unless schemas_query.methods.include?(:output)
+      schemas = schemas_query.lines
+
+      schemas.each do |schema|
+        nspacl_sql = "SELECT pg_catalog.array_to_string(n.nspacl, E','), "\
+          'n.nspname FROM pg_catalog.pg_namespace n '\
+          "WHERE n.nspname = '#{schema}';"
+        # If the db name is not specified it defaults to the user name executing the query
+        describe sql.query(nspacl_sql [database]) do
+          its('output') { should match schema_acl_regex }
+        end
+      end
+    end
+  end
+
+  control 'SV-261925' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261927' do
+    describe "A manual review is required to ensure PostgreSQL requires users to reauthenticate when organization-defined
+      circumstances or situations require reauthentication" do
+      skip "A manual review is required to ensure PostgreSQL requires users to reauthenticate when organization-defined
+      circumstances or situations require reauthentication"
+    end
+  end
+
+  control 'SV-261934' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261935' do
     impact 0.0
     describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
       skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
     end
   end
 
-  control 'SV-261896' do
+  control 'SV-261936' do
     impact 0.0
     describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
       skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
+    end
+  end
+
+  control 'SV-261938' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261939' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261940' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261941' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261942' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261943' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261944' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261945' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261946' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261947' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261948' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261949' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261950' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261951' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261952' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261953' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261955' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261956' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261957' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261959' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261960' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
+  control 'SV-261961' do
+    desc 'check', 'First, as the database administrator, verify that log_connections
+    and log_disconnections are enabled by running the following SQL:
+    $ sudo su - postgres
+    $ psql -c "SHOW log_connections"
+    $ psql -c "SHOW log_disconnections"
+    If either is off, this is a finding.
+    Next, verify that log_line_prefix contains sufficient information by running
+    the following SQL:
+    $ sudo su - postgres
+    $ psql -c "SHOW log_line_prefix"
+    If log_line_prefix does not contain at least %t %u %d %p, this is a finding.'
+
+    desc 'fix', %q[Note: The following instructions use the PGDATA and PGVER
+    environment variables. See supplementary content APPENDIX-F for instructions on
+    configuring PGDATA and APPENDIX-H for PGVER.
+    To ensure that logging is enabled, review supplementary content APPENDIX-C for
+    instructions on enabling logging.
+    First, as the database administrator (shown here as "postgres"), edit
+    postgresql.conf:
+    $ sudo su - postgres
+    $ vi ${PGDATA?}/postgresql.conf
+    Edit the following parameters as such:
+    log_connections = on
+    log_disconnections = on
+    log_line_prefix = '< %t %u %d %p: >'
+    Where:
+    * %t is the time and date without milliseconds
+    * %u is the username
+    * %d is the database
+    * %p is the Process ID for the connection
+    Now, as the system administrator, reload the server with the new configuration:
+    # SYSTEMD SERVER ONLY
+    $ sudo systemctl reload postgresql-${PGVER?}
+    # INITD SERVER ONLY
+    $ sudo service postgresql-${PGVER?} reload"]
+
+    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
+
+    describe "PostgreSQL logging settings" do
+      it "should have log_connections enabled." do
+        expect(sql.query('SHOW log_connections;', [input('pg_db')]).output.strip.downcase).to eq('on')
+      end
+
+      it "should have log_disconnections enabled." do
+        expect(sql.query('SHOW log_disconnections;', [input('pg_db')]).output.strip.downcase).to eq('on')
+      end
+    end
+
+    log_line_prefix_escapes = %w(%t %u %d %p)
+
+    log_line_prefix_escapes.each do |escape|
+      describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
+        it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
+          expect(subject.output).to include(escape)
+        end
+      end
     end
   end
 
@@ -1412,42 +1404,30 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     end
   end
 
-  control 'SV-261868' do
-   
-    desc 'check', 'First, as the database administrator (shown here as "postgres"), check the
-    current log_line_prefix setting by running the following SQL:
-    $ psql -c "SHOW log_line_prefix"
-    If log_line_prefix does not contain %t %u %d, this is a finding.'
-
-    desc 'fix', "Note: The following instructions use the PGDATA environment
-    variable. See supplementary content APPENDIX-F for instructions on configuring
-    PGDATA.
-    To check that logging is enabled, review supplementary content APPENDIX-C for
-    instructions on enabling logging.
-    Extra parameters can be added to the setting log_line_prefix to log application
-    related information:
-    # %a = application name
-    # %u = user name
-    # %d = database name
-    # %r = remote host and port
-    # %p = process ID
-    # %m = timestamp with milliseconds
-    # %t = timestamp without milliseconds
-    # %i = command tag
-    # %s = session startup
-    # %e = SQL state
-    For example:
-    log_line_prefix = '< %t %a %u %d %r %p %i %e %s>’
-    Now, as the system administrator, reload the server with the new configuration"
-
-    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
-
-    log_line_prefix_escapes = %w(%t %u %d)
-
-    log_line_prefix_escapes.each do |escape|
-      describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
-        its('output') { should include escape }
-      end
+  control 'SV-261963' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
     end
   end
+
+  control 'SV-261965' do
+    impact 0.0
+    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
+      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
+    end
+  end
+
+  control 'SV-261966' do
+    impact 0.0
+    describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
+      skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
+    end
+  end
+
+  control 'SV-261967' do
+    describe 'Requires manual review of the RDS audit log system.' do
+      skip 'Requires manual review of the RDS audit log system.'
+    end
+  end
+
 end
