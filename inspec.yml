@@ -11,7 +11,7 @@ inspec_version: ">= 4.0"
 
 depends:
 - name: crunchy-data-postgresql-16-stig-baseline
-  url: https://github.com/mitre/crunchy-data-postgresql-16-stig-baseline/archive/NewInputs.tar.gz
+  url: https://github.com/mitre/crunchy-data-postgresql-16-stig-baseline/archive/main.tar.gz
   
 inputs:
 - name: pg_superusers
