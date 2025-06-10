@@ -31,11 +31,11 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
         end
       end
 
-      #authorized_owners = input('pg_superusers')
+
       authorized_owners = input('pg_system_resource_users')
       owners = authorized_owners.join('|')
 
-      #object_granted_privileges = 'arwdDxtU'
+
       object_granted_privileges = 'arwd(DxtU?|)?'
       object_public_privileges = 'r'
       object_acl = "^((((?:#{owners}|\\w+)=[#{object_granted_privileges}]+|"\
@@ -590,8 +590,6 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
         "=[#{object_public_privileges}]+)\/\\w+,?)+|)\\|"
       object_acl_regex = Regexp.new(object_acl)
 
-      # pg_settings_acl = "^((((#{supperusers})=[#{object_granted_privileges}]+|"\
-      #   "=rw)\/\\w+,?)+)\\|pg_catalog\\|pg_settings\\|v"
       pg_settings_acl = "^((((#{supperusers})=[#{object_granted_privileges}]+|"\
         "=(#{object_public_privileges}|rw))\/\\w+,?)+)|pg_catelog\|\w+\|(r|v)"
         
