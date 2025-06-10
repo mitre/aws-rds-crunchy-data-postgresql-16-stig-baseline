@@ -116,8 +116,8 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
     sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
 
+    # Check log_line_prefix for required escapes (see ESCAPE_LOOKUP hash in the helper_methods.rb file)
     log_line_prefix_escapes = %w(%t %u %d %p %r)
-
     log_line_prefix_escapes.each do |escape|
       describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
         it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
@@ -219,18 +219,7 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
     sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
 
-    # Check log_line_prefix for required escapes
-    # %t = timestamp without milliseconds
-    # %u = user name
-    # %d = database name
-    # %p = process ID
-    # log_line_prefix_escapes = %w(%t %u %d %p)
-    # log_line_prefix_escapes.each do |escape|
-    #   describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
-    #     its('output') { should include escape }
-    #   end
-    # end
-
+    # Check log_line_prefix for required escapes (see ESCAPE_LOOKUP hash in the helper_methods.rb file)
     log_line_prefix_escapes = %w(%u %d %r %p %t)
     log_line_prefix_escapes.each do |escape|
       describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
@@ -278,7 +267,9 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
     log_line_prefix_escapes.each do |escape|
       describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
-        its('output') { should include escape }
+        it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
+          expect(subject.output).to include(escape)
+        end
       end
     end
   end
@@ -316,7 +307,9 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
     log_line_prefix_escapes.each do |escape|
       describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
-        its('output') { should include escape }
+        it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
+          expect(subject.output).to include(escape)
+        end
       end
     end
   end
@@ -357,7 +350,9 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     log_line_prefix_escapes = %w(%u %d %r %p %t)
     log_line_prefix_escapes.each do |escape|
       describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
-        its('output') { should include escape }
+        it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
+          expect(subject.output).to include(escape)
+        end
       end
     end
 
@@ -412,7 +407,9 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
     log_line_prefix_escapes.each do |escape|
       describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
-        its('output') { should include escape }
+        it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
+          expect(subject.output).to include(escape)
+        end
       end
     end
   end
@@ -1438,7 +1435,9 @@ control 'SV-261922' do
 
     log_line_prefix_escapes.each do |escape|
       describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
-        its('output') { should include escape }
+        it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
+          expect(subject.output).to include(escape)
+        end
       end
     end
   end
