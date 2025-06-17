@@ -1,9 +1,9 @@
 # Make helper methods and constants available
 include_controls 'crunchy-data-postgresql-16-stig-baseline' do
   begin
-    require 'custom_helper'
+    require 'helper_methods'
   rescue LoadError
-    require_relative '../libraries/custom_helper'
+    require_relative '../libraries/helper_methods'
   end
 
   control 'SV-261858' do
