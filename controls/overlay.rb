@@ -1,5 +1,4 @@
 include_controls 'crunchy-data-postgresql-16-stig-baseline' do
-  require_relative '../libraries/helper_methods'
 
   control 'SV-261858' do
     impact 0.0
