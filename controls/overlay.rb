@@ -1,3 +1,6 @@
+# Make helper methods and constants available
+include CustomHelper
+
 include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
   control 'SV-261858' do
