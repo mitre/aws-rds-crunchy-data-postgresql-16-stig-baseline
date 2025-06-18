@@ -1299,6 +1299,14 @@ control 'SV-261922' do
     end
   end
 
+  control 'SV-261937' do
+    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
+
+    describe sql.query('SHOW server_version;', [input('pg_db')]) do
+      its('output') { should cmp >= input('min_org_allowed_postgres_version') }
+    end
+  end
+
   control 'SV-261938' do
     describe 'Requires manual review of the RDS audit log system.' do
       skip 'Requires manual review of the RDS audit log system.'
