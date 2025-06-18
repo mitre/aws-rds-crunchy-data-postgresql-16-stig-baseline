@@ -1,7 +1,14 @@
 # Make helper methods and constants available
-include CustomHelper
-
 include_controls 'crunchy-data-postgresql-16-stig-baseline' do
+
+  # Add libraries/ to the Ruby load path
+  $LOAD_PATH.unshift File.expand_path('../libraries', __dir__)
+
+  begin
+    require 'helper_methods'
+  rescue LoadError
+    require_relative '../libraries/helper_methods'
+  end
 
   control 'SV-261858' do
     impact 0.0
