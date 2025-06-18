@@ -4,13 +4,34 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
   # Add libraries/ to the Ruby load path
   $LOAD_PATH.unshift File.expand_path('../libraries', __dir__)
 
-  begin
-    require 'helper_methods'
-    CustomHelper::ESCAPE_LOOKUP  # ← This line raises NameError if CustomHelper or ESCAPE_LOOKUP isn't defined
-  rescue LoadError, NameError
-    require_relative '../libraries/helper_methods'
+  # begin
+  #   require 'helper_methods'
+  #   CustomHelper::ESCAPE_LOOKUP  # ← This line raises NameError if CustomHelper or ESCAPE_LOOKUP isn't defined
+  # rescue LoadError, NameError
+  #   require_relative '../libraries/helper_methods'
+  # end
+  CUSTOM_HELPER_LOADED = begin
+    begin
+      puts "Loading custom helper using require 'helper_methods'"
+      require 'helper_methods'
+      puts "Custom helper loaded successfully - Testing ESCAPE_LOOKUP"
+      CustomHelper::ESCAPE_LOOKUP # ← This line raises NameError if CustomHelper or ESCAPE_LOOKUP isn't defined
+      puts "Custom helper ESCAPE_LOOKUP is available"
+      true
+    rescue LoadError, NameError
+      begin
+        puts "Loading custom helper using require_relative '../libraries/helper_methods'"
+        require_relative '../libraries/helper_methods'
+        puts "Custom helper loaded successfully - Testing ESCAPE_LOOKUP"
+        CustomHelper::ESCAPE_LOOKUP # ← This line raises NameError if CustomHelper or ESCAPE_LOOKUP isn't defined
+        puts "Custom helper ESCAPE_LOOKUP is available"
+        true
+      rescue LoadError, NameError
+        false
+      end
+    end
   end
-
+  
   control 'SV-261858' do
     impact 0.0
     describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
@@ -135,8 +156,14 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     log_line_prefix_escapes = %w(%t %u %d %p %r)
     log_line_prefix_escapes.each do |escape|
       describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
-        it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
-          expect(subject.output).to include(escape)
+        if CUSTOM_HELPER_LOADED
+          it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
+            expect(subject.output).to include(escape)
+          end
+        else
+          it "Should include the escape sequence '#{escape}' in the output" do
+            expect(subject.output).to include(escape)
+          end
         end
       end
     end
@@ -238,8 +265,14 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     log_line_prefix_escapes = %w(%u %d %r %p %t)
     log_line_prefix_escapes.each do |escape|
       describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
-        it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
-          expect(subject.output).to include(escape)
+        if CUSTOM_HELPER_LOADED
+          it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
+            expect(subject.output).to include(escape)
+          end
+        else
+          it "Should include the escape sequence '#{escape}' in the output" do
+            expect(subject.output).to include(escape)
+          end
         end
       end
     end
@@ -282,8 +315,14 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
     log_line_prefix_escapes.each do |escape|
       describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
-        it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
-          expect(subject.output).to include(escape)
+        if CUSTOM_HELPER_LOADED
+          it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
+            expect(subject.output).to include(escape)
+          end
+        else
+          it "Should include the escape sequence '#{escape}' in the output" do
+            expect(subject.output).to include(escape)
+          end
         end
       end
     end
@@ -322,9 +361,15 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
     log_line_prefix_escapes.each do |escape|
       describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
-        it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
-          expect(subject.output).to include(escape)
-        end
+        if CUSTOM_HELPER_LOADED
+          it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
+            expect(subject.output).to include(escape)
+          end
+        else
+          it "Should include the escape sequence '#{escape}' in the output" do
+            expect(subject.output).to include(escape)
+          end
+        end        
       end
     end
   end
@@ -365,9 +410,15 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
     log_line_prefix_escapes = %w(%u %d %r %p %t)
     log_line_prefix_escapes.each do |escape|
       describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
-        it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
-          expect(subject.output).to include(escape)
-        end
+        if CUSTOM_HELPER_LOADED
+          it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
+            expect(subject.output).to include(escape)
+          end
+        else
+          it "Should include the escape sequence '#{escape}' in the output" do
+            expect(subject.output).to include(escape)
+          end
+        end        
       end
     end
 
@@ -422,8 +473,14 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
     log_line_prefix_escapes.each do |escape|
       describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
-        it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
-          expect(subject.output).to include(escape)
+        if CUSTOM_HELPER_LOADED
+          it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
+            expect(subject.output).to include(escape)
+          end
+        else
+          it "Should include the escape sequence '#{escape}' in the output" do
+            expect(subject.output).to include(escape)
+          end
         end
       end
     end
@@ -579,13 +636,20 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
             "AND n.nspname <> 'pg_catalog' AND n.nspname <> 'information_schema'"\
             " AND n.nspname !~ '^pg_toast';"
         end
-
-        describe "SQL query result for database '#{database}' and relation '#{CustomHelper::TableTypes.from_short(type)}'" do
-          sql_result = sql.query(objects_sql, [database])
-          
-          it "should not return any 'objects' owned by unauthorized users." do
-            expect(sql_result.lines.map(&:strip)).to be_empty.or match(connection_error_regex)
+        if CUSTOM_HELPER_LOADED
+          describe "SQL query result for database '#{database}' and relation '#{CustomHelper::TableTypes.from_short(type)}'" do
+            sql_result = sql.query(objects_sql, [database])
+            it "should not return any 'objects' owned by unauthorized users." do
+              expect(sql_result.lines.map(&:strip)).to be_empty.or match(connection_error_regex)
+            end
           end
+        else
+          describe "SQL query result for database '#{database}' and relation '#{type}'" do
+            sql_result = sql.query(objects_sql, [database])
+            it "should not return any 'objects' owned by unauthorized users." do
+              expect(sql_result.lines.map(&:strip)).to be_empty.or match(connection_error_regex)
+            end
+          end          
         end
       end
     end
@@ -642,10 +706,17 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
             "AND c.relkind = '#{type}';"
 
           sql_result = sql.query(relacl_sql, [database])
-
-          describe "SQL query result for database '#{database}', schema '#{schema}', object '#{object}' and relation type '#{CustomHelper::TableTypes.from_short(type)}'" do
-            it 'should not be owned by unauthorized users.' do
-              expect(sql_result.output).to match(object_acl_regex).or match(pg_settings_acl_regex)
+          if CUSTOM_HELPER_LOADED
+            describe "SQL query result for database '#{database}', schema '#{schema}', object '#{object}' and relation type '#{CustomHelper::TableTypes.from_short(type)}'" do
+              it 'should not be owned by unauthorized users.' do
+                expect(sql_result.output).to match(object_acl_regex).or match(pg_settings_acl_regex)
+              end
+            end
+          else
+            describe "SQL query result for database '#{database}', schema '#{schema}', object '#{object}' and relation type '#{type}'" do
+              it 'should not be owned by unauthorized users.' do
+                expect(sql_result.output).to match(object_acl_regex).or match(pg_settings_acl_regex)
+              end
             end
           end
           tested.push(obj)
@@ -999,15 +1070,21 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
                           "AND n.nspname <> 'pg_catalog' AND n.nspname <> 'information_schema'"\
                           " AND n.nspname !~ '^pg_toast';"
                       end
-
-        describe "Discretionary Access Control (DAC) for database '#{database}' and relation type '#{CustomHelper::TableTypes.from_short(type)}'" do
-          sql_result = sql.query(objects_sql, [database])
-        
-          it 'should only be granted to legitimate users (owners).' do
-            expect(sql_result.output).to eq('') | match(connection_error_regex)
+        if CUSTOM_HELPER_LOADED
+          describe "Discretionary Access Control (DAC) for database '#{database}' and relation type '#{CustomHelper::TableTypes.from_short(type)}'" do
+            sql_result = sql.query(objects_sql, [database])
+            it 'should only be granted to legitimate users (owners).' do
+              expect(sql_result.output).to eq('') | match(connection_error_regex)
+            end
+          end
+        else
+          describe "Discretionary Access Control (DAC) for database '#{database}' and relation type '#{type}'" do
+            sql_result = sql.query(objects_sql, [database])
+            it 'should only be granted to legitimate users (owners).' do
+              expect(sql_result.output).to eq('') | match(connection_error_regex)
+            end
           end
         end
-      
       end
     end
   end
@@ -1401,8 +1478,14 @@ control 'SV-261922' do
 
     log_line_prefix_escapes.each do |escape|
       describe sql.query('SHOW log_line_prefix;', [input('pg_db')]) do
-        it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
-          expect(subject.output).to include(escape)
+        if CUSTOM_HELPER_LOADED
+          it "Should include the escape sequence '#{escape}' (#{CustomHelper::ESCAPE_LOOKUP[escape] || 'unknown description'}) in the output" do
+            expect(subject.output).to include(escape)
+          end
+        else
+          it "Should include the escape sequence '#{escape}' in the output" do
+            expect(subject.output).to include(escape)
+          end
         end
       end
     end
