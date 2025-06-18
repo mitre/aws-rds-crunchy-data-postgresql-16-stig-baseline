@@ -6,7 +6,8 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
 
   begin
     require 'helper_methods'
-  rescue LoadError
+    CustomHelper::ESCAPE_LOOKUP  # ← This line raises NameError if CustomHelper or ESCAPE_LOOKUP isn't defined
+  rescue LoadError, NameError
     require_relative '../libraries/helper_methods'
   end
 
