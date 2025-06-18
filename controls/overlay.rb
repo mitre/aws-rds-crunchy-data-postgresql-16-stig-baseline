@@ -4,27 +4,15 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
   # Add libraries/ to the Ruby load path
   $LOAD_PATH.unshift File.expand_path('../libraries', __dir__)
 
-  # begin
-  #   require 'helper_methods'
-  #   CustomHelper::ESCAPE_LOOKUP  # ← This line raises NameError if CustomHelper or ESCAPE_LOOKUP isn't defined
-  # rescue LoadError, NameError
-  #   require_relative '../libraries/helper_methods'
-  # end
   CUSTOM_HELPER_LOADED = begin
     begin
-      puts "Loading custom helper using require 'helper_methods'"
       require 'helper_methods'
-      puts "Custom helper loaded successfully - Testing ESCAPE_LOOKUP"
       CustomHelper::ESCAPE_LOOKUP # ← This line raises NameError if CustomHelper or ESCAPE_LOOKUP isn't defined
-      puts "Custom helper ESCAPE_LOOKUP is available"
       true
     rescue LoadError, NameError
       begin
-        puts "Loading custom helper using require_relative '../libraries/helper_methods'"
         require_relative '../libraries/helper_methods'
-        puts "Custom helper loaded successfully - Testing ESCAPE_LOOKUP"
         CustomHelper::ESCAPE_LOOKUP # ← This line raises NameError if CustomHelper or ESCAPE_LOOKUP isn't defined
-        puts "Custom helper ESCAPE_LOOKUP is available"
         true
       rescue LoadError, NameError
         false
