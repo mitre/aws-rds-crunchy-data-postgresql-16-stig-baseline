@@ -1288,10 +1288,20 @@ control 'SV-261922' do
   end
 
   control 'SV-261937' do
-    sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
-
-    describe sql.query('SHOW server_version;', [input('pg_db')]) do
-      its('output') { should cmp >= input('min_org_allowed_postgres_version') }
+    min_org_allowed_postgres_version = input('min_org_allowed_postgres_version')
+    installed_postgres_version = command('psql --version').stdout.split[2]
+  
+    # If no organization specified postgres version was given, inform the user to manually review the control for proper major and minor release versions
+    if (min_org_allowed_postgres_version.nil? || min_org_allowed_postgres_version.empty?)
+      describe "Your installed Postgres version is: #{installed_postgres_version}. You must review this control manually or set / pass the 'min_org_allowed_postgres_version' to the profile. The latest supported releases can be found at http://www.postgresql.org/support/versioning/" do
+        skip "Your installed Postgres version is: #{installed_postgres_version}. You must review this control manually or set / pass the 'min_org_allowed_postgres_version' to the profile. The latest supported releases can be found at http://www.postgresql.org/support/versioning/"
+      end
+    else
+      sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
+  
+      describe sql.query('SHOW server_version;', [input('pg_db')]) do
+        its('output') { should cmp >= min_org_allowed_postgres_version }
+      end
     end
   end
 
