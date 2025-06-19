@@ -4,27 +4,15 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
   # Add libraries/ to the Ruby load path
   $LOAD_PATH.unshift File.expand_path('../libraries', __dir__)
 
-  # begin
-  #   require 'helper_methods'
-  #   CustomHelper::ESCAPE_LOOKUP  # ← This line raises NameError if CustomHelper or ESCAPE_LOOKUP isn't defined
-  # rescue LoadError, NameError
-  #   require_relative '../libraries/helper_methods'
-  # end
   CUSTOM_HELPER_LOADED = begin
     begin
-      puts "Loading custom helper using require 'helper_methods'"
       require 'helper_methods'
-      puts "Custom helper loaded successfully - Testing ESCAPE_LOOKUP"
       CustomHelper::ESCAPE_LOOKUP # ← This line raises NameError if CustomHelper or ESCAPE_LOOKUP isn't defined
-      puts "Custom helper ESCAPE_LOOKUP is available"
       true
     rescue LoadError, NameError
       begin
-        puts "Loading custom helper using require_relative '../libraries/helper_methods'"
         require_relative '../libraries/helper_methods'
-        puts "Custom helper loaded successfully - Testing ESCAPE_LOOKUP"
         CustomHelper::ESCAPE_LOOKUP # ← This line raises NameError if CustomHelper or ESCAPE_LOOKUP isn't defined
-        puts "Custom helper ESCAPE_LOOKUP is available"
         true
       rescue LoadError, NameError
         false
@@ -573,12 +561,12 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
       if database == 'postgres'
         schemas_sql = 'SELECT n.nspname, pg_catalog.pg_get_userbyid(n.nspowner) '\
           'FROM pg_catalog.pg_namespace n '\
-          "WHERE pg_catalog.pg_get_userbyid(n.nspowner) <> '#{pg_owner}' AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin';"
+          "WHERE pg_catalog.pg_get_userbyid(n.nspowner) <> '#{pg_owner}' AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin' AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'pg_database_owner';"
         functions_sql = 'SELECT n.nspname, p.proname, '\
           'pg_catalog.pg_get_userbyid(n.nspowner) '\
           'FROM pg_catalog.pg_proc p '\
           'LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace '\
-          "WHERE pg_catalog.pg_get_userbyid(n.nspowner) <> '#{pg_owner}' AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin';"
+          "WHERE pg_catalog.pg_get_userbyid(n.nspowner) <> '#{pg_owner}' AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin' AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'pg_database_owner';"
       else
         schemas_sql = 'SELECT n.nspname, pg_catalog.pg_get_userbyid(n.nspowner) '\
           'FROM pg_catalog.pg_namespace n '\
@@ -1011,12 +999,12 @@ include_controls 'crunchy-data-postgresql-16-stig-baseline' do
       if database == 'postgres'
         schemas_sql = 'SELECT n.nspname, pg_catalog.pg_get_userbyid(n.nspowner) '\
           'FROM pg_catalog.pg_namespace n '\
-          "WHERE pg_catalog.pg_get_userbyid(n.nspowner) <> '#{pg_owner}' AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin';"
+          "WHERE pg_catalog.pg_get_userbyid(n.nspowner) <> '#{pg_owner}' AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin' AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'pg_database_owner';"
         functions_sql = 'SELECT n.nspname, p.proname, '\
           'pg_catalog.pg_get_userbyid(n.nspowner) '\
           'FROM pg_catalog.pg_proc p '\
           'LEFT JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace '\
-          "WHERE pg_catalog.pg_get_userbyid(n.nspowner) <> '#{pg_owner}' AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin';"
+          "WHERE pg_catalog.pg_get_userbyid(n.nspowner) <> '#{pg_owner}' AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'rdsadmin' AND pg_catalog.pg_get_userbyid(n.nspowner) <> 'pg_database_owner';"
       else
         schemas_sql = 'SELECT n.nspname, pg_catalog.pg_get_userbyid(n.nspowner) '\
           'FROM pg_catalog.pg_namespace n '\
@@ -1296,6 +1284,24 @@ control 'SV-261922' do
     impact 0.0
     describe 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running' do
       skip 'This control is not applicable on postgres within aws rds, as aws manages the operating system on which the postgres database is running'
+    end
+  end
+
+  control 'SV-261937' do
+    min_org_allowed_postgres_version = input('min_org_allowed_postgres_version')
+    installed_postgres_version = command('psql --version').stdout.split[2]
+  
+    # If no organization specified postgres version was given, inform the user to manually review the control for proper major and minor release versions
+    if (min_org_allowed_postgres_version.nil? || min_org_allowed_postgres_version.empty?)
+      describe "Your installed Postgres version is: #{installed_postgres_version}. You must review this control manually or set / pass the 'min_org_allowed_postgres_version' to the profile. The latest supported releases can be found at http://www.postgresql.org/support/versioning/" do
+        skip "Your installed Postgres version is: #{installed_postgres_version}. You must review this control manually or set / pass the 'min_org_allowed_postgres_version' to the profile. The latest supported releases can be found at http://www.postgresql.org/support/versioning/"
+      end
+    else
+      sql = postgres_session(input('pg_dba'), input('pg_dba_password'), input('pg_host'), input('pg_port'))
+  
+      describe sql.query('SHOW server_version;', [input('pg_db')]) do
+        its('output') { should cmp >= min_org_allowed_postgres_version }
+      end
     end
   end
 
